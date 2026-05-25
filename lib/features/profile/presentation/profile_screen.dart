@@ -10,6 +10,8 @@ import '../../auth/data/auth_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/data/models/auth_model.dart';
 import '../../../core/providers/session_provider.dart';
+import '../../../core/storage/secure_storage.dart';
+import '../../../core/notifications/notification_service.dart';
 import '../../feedback/data/feedback_repository.dart';
 
 final _profileProvider = FutureProvider<UserModel>((ref) {
@@ -483,12 +485,15 @@ class _NotificationSettingsSheetState
   bool _workoutReminders = true;
   bool _subscriptionAlerts = true;
   bool _classReminders = true;
+  bool _offersAnnouncements = true;
   bool _loading = true;
+  String? _gymId;
 
   static const _kPush = 'notif_push';
   static const _kWorkout = 'notif_workout';
   static const _kSubscription = 'notif_subscription';
   static const _kClass = 'notif_class';
+  static const _kAnnouncements = 'notif_announcements';
 
   @override
   void initState() {
@@ -497,12 +502,19 @@ class _NotificationSettingsSheetState
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
+    final results = await Future.wait([
+      SharedPreferences.getInstance(),
+      SecureStorage.getGymId(),
+    ]);
+    final prefs = results[0] as SharedPreferences;
+    final gymId = results[1] as String?;
     setState(() {
       _pushEnabled = prefs.getBool(_kPush) ?? true;
       _workoutReminders = prefs.getBool(_kWorkout) ?? true;
       _subscriptionAlerts = prefs.getBool(_kSubscription) ?? true;
       _classReminders = prefs.getBool(_kClass) ?? true;
+      _offersAnnouncements = prefs.getBool(_kAnnouncements) ?? true;
+      _gymId = gymId;
       _loading = false;
     });
   }
@@ -593,6 +605,20 @@ class _NotificationSettingsSheetState
               onChanged: (v) {
                 setState(() => _classReminders = v);
                 _save(_kClass, v);
+              },
+            ),
+            _NotifToggle(
+              icon: Icons.local_offer_outlined,
+              label: 'Offers & Announcements',
+              subtitle: 'New deals, events & gym updates',
+              value: _pushEnabled && _offersAnnouncements,
+              enabled: _pushEnabled,
+              onChanged: (v) {
+                setState(() => _offersAnnouncements = v);
+                _save(_kAnnouncements, v);
+                if (_gymId != null) {
+                  NotificationService.toggleAnnouncementTopic(v, _gymId!);
+                }
               },
             ),
             const SizedBox(height: 16),

@@ -67,6 +67,23 @@ class NotificationService {
     });
   }
 
+  /// Toggle the gym announcements & offers FCM topics.
+  /// Call when the user flips the in-app "Offers & Announcements" toggle.
+  static Future<void> toggleAnnouncementTopic(
+      bool enable, String gymId) async {
+    if (enable) {
+      await Future.wait([
+        FirebaseMessaging.instance.subscribeToTopic('gym_$gymId'),
+        FirebaseMessaging.instance.subscribeToTopic('announcements'),
+      ]);
+    } else {
+      await Future.wait([
+        FirebaseMessaging.instance.unsubscribeFromTopic('gym_$gymId'),
+        FirebaseMessaging.instance.unsubscribeFromTopic('announcements'),
+      ]);
+    }
+  }
+
   /// Call before logout — unsubscribes from topics and cancels token refresh.
   static Future<void> unregisterDevice(String gymId) async {
     await _tokenRefreshSub?.cancel();

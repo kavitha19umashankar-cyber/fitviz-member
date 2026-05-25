@@ -1,0 +1,106 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader -> localProperties.load(reader) }
+}
+
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
+def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
+
+def keyProperties = new Properties()
+def keyPropertiesFile = rootProject.file("key.properties")
+if (keyPropertiesFile.exists()) {
+    keyPropertiesFile.withReader("UTF-8") { reader -> keyProperties.load(reader) }
+}
+
+def k2KeyProperties = new Properties()
+def k2KeyPropertiesFile = rootProject.file("k2fitness-key.properties")
+if (k2KeyPropertiesFile.exists()) {
+    k2KeyPropertiesFile.withReader("UTF-8") { reader -> k2KeyProperties.load(reader) }
+}
+
+android {
+    namespace "in.fitviz.member"
+    compileSdk 36
+    ndkVersion "28.2.13676358"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    flavorDimensions "brand"
+
+    productFlavors {
+        fitviz {
+            dimension "brand"
+            applicationId "in.fitviz.member"
+            manifestPlaceholders += [
+                appName: "FitViz",
+                notificationChannelId: "fitviz_default"
+            ]
+        }
+        k2fitness {
+            dimension "brand"
+            applicationId "in.k2fitness.member"
+            manifestPlaceholders += [
+                appName: "K2 Fitness Studio",
+                notificationChannelId: "k2fitness_default"
+            ]
+        }
+    }
+
+    defaultConfig {
+        // applicationId is overridden per flavor above
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion 35
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+        manifestPlaceholders += [
+            appName: "FitViz",
+            notificationChannelId: "fitviz_default"
+        ]
+    }
+
+    signingConfigs {
+        release {
+            if (keyPropertiesFile.exists()) {
+                keyAlias keyProperties["keyAlias"]
+                keyPassword keyProperties["keyPassword"]
+                storeFile file(keyProperties["storeFile"])
+                storePassword keyProperties["storePassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+        }
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig keyPropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+}
+
+flutter {
+    source "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
+}

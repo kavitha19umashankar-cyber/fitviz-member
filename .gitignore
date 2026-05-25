@@ -1,0 +1,46 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+
+# Android signing — NEVER commit these
+android/key.properties
+android/k2fitness-key.properties
+android/app/*.jks
+android/app/*.keystore
+
+# Android generated
+android/.gradle/
+android/app/google-services.json
+local.properties
+
+# iOS generated
+ios/.symlinks/
+ios/Pods/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GoogleService-Info.plist
+ios/Runner/GeneratedPluginRegistrant.h
+ios/Runner/GeneratedPluginRegistrant.m
+*.xcworkspace
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+*.ipr
+*.iws
+.vscode/
+
+# Env / secrets
+.env
+*.env

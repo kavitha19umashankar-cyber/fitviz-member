@@ -52,6 +52,9 @@ dependencies:
   # Image compression before upload
   flutter_image_compress: ^2.2.0
 
+  # Biometric authentication
+  local_auth: ^2.3.0
+
   # Freeze data classes
   freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0

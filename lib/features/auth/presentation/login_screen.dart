@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../flavors/flavor_config.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/providers/session_provider.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -20,6 +21,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePass = true;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-trigger biometric prompt if a session is pending biometric unlock.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(biometricPendingProvider)) {
+        _triggerBiometric();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _phoneCtrl.dispose();
     _passCtrl.dispose();
@@ -33,9 +45,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         .login(_phoneCtrl.text.trim(), _passCtrl.text);
   }
 
+  Future<void> _triggerBiometric() async {
+    await ref.read(authProvider.notifier).loginWithBiometric();
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final biometricPending = ref.watch(biometricPendingProvider);
 
     ref.listen(authProvider, (_, next) {
       next.maybeWhen(
@@ -46,17 +63,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     });
 
-    final isLoading = authState.maybeWhen(loading: () => true, orElse: () => false);
+    final isLoading =
+        authState.maybeWhen(loading: () => true, orElse: () => false);
 
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 const SizedBox(height: 60),
                 // Logo / brand
                 Center(
@@ -78,13 +96,73 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 80),
-                Text('Welcome',
-                    style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 8),
-                Text('Sign in to continue your fitness journey',
-                    style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 36),
-                // Phone number
+
+                // ── Biometric unlock section ────────────────────────────────
+                if (biometricPending) ...[
+                  Center(
+                    child: Column(
+                      children: [
+                        Text('Welcome back!',
+                            style: Theme.of(context).textTheme.headlineMedium),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Use biometric to unlock the app',
+                          style: TextStyle(
+                              color: AppColors.textSecondary, fontSize: 14),
+                        ),
+                        const SizedBox(height: 32),
+                        GestureDetector(
+                          onTap: isLoading ? null : _triggerBiometric,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            child: isLoading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(24),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : Icon(Icons.fingerprint,
+                                    size: 44, color: AppColors.primary),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: isLoading ? null : _triggerBiometric,
+                          child: const Text('Tap to authenticate'),
+                        ),
+                        const SizedBox(height: 32),
+                        const Row(children: [
+                          Expanded(child: Divider()),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('or sign in with password',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12)),
+                          ),
+                          Expanded(child: Divider()),
+                        ]),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Text('Welcome',
+                      style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 8),
+                  Text('Sign in to continue your fitness journey',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(height: 36),
+                ],
+
+                // ── Password login form ─────────────────────────────────────
                 TextFormField(
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
@@ -98,7 +176,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Password
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _obscurePass,
@@ -122,7 +199,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Forgot password
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -138,7 +214,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Login button
                 ElevatedButton(
                   onPressed: isLoading ? null : _submit,
                   child: isLoading

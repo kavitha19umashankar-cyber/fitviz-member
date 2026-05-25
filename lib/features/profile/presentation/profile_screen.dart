@@ -12,6 +12,7 @@ import '../../auth/data/models/auth_model.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/notifications/notification_service.dart';
+import '../../../core/utils/biometric_service.dart';
 import '../../feedback/data/feedback_repository.dart';
 
 final _profileProvider = FutureProvider<UserModel>((ref) {
@@ -133,8 +134,25 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
           label: 'Biometric Unlock',
           value: _biometricEnabled,
           onChanged: (v) async {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool(_kBiometric, v);
+            if (v) {
+              // Enabling — check hardware availability first
+              final available = await BiometricService.isAvailable();
+              if (!available) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text(
+                        'Biometric authentication is not available on this device.'),
+                  ));
+                }
+                return;
+              }
+              // Confirm identity before enabling
+              final confirmed = await BiometricService.authenticate(
+                reason: 'Confirm your identity to enable biometric unlock',
+              );
+              if (!confirmed) return;
+            }
+            await BiometricService.setEnabled(v);
             if (mounted) setState(() => _biometricEnabled = v);
           },
         ),

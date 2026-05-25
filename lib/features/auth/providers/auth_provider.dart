@@ -6,6 +6,7 @@ import '../data/auth_repository.dart';
 import '../data/models/auth_model.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../../../core/utils/biometric_service.dart';
 import '../../../core/events/app_events.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../flavors/flavor_config.dart';
@@ -49,20 +50,59 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _checkSession() async {
     final hasSession = await SecureStorage.hasSession();
-    if (hasSession) {
-      try {
-        final user = await _repo.getProfile();
-        state = AuthState.authenticated(user: user);
-        final gymId = user.gymId ?? '';
-        if (gymId.isNotEmpty) {
-          unawaited(NotificationService.registerDeviceForGym(
-              gymId, _repo.updateFcmToken));
-        }
-      } catch (_) {
-        await SecureStorage.clearAll();
-        state = const AuthState.unauthenticated();
+    if (!hasSession) {
+      state = const AuthState.unauthenticated();
+      return;
+    }
+
+    // If biometric is enabled, signal the login screen to prompt the user
+    // instead of silently restoring the session.
+    final biometricEnabled = await BiometricService.isEnabled();
+    final biometricAvailable = await BiometricService.isAvailable();
+    if (biometricEnabled && biometricAvailable) {
+      _ref.read(biometricPendingProvider.notifier).state = true;
+      state = const AuthState.unauthenticated();
+      return;
+    }
+
+    try {
+      final user = await _repo.getProfile();
+      state = AuthState.authenticated(user: user);
+      final gymId = user.gymId ?? '';
+      if (gymId.isNotEmpty) {
+        unawaited(NotificationService.registerDeviceForGym(
+            gymId, _repo.updateFcmToken));
       }
-    } else {
+    } catch (_) {
+      await SecureStorage.clearAll();
+      state = const AuthState.unauthenticated();
+    }
+  }
+
+  /// Called from the login screen when biometric is pending.
+  /// Authenticates with biometrics then restores the stored session.
+  Future<void> loginWithBiometric() async {
+    state = const AuthState.loading();
+    final passed = await BiometricService.authenticate(
+      reason: 'Use biometric to unlock ${FlavorConfig.instance.appName}',
+    );
+    if (!passed) {
+      state = const AuthState.unauthenticated();
+      return;
+    }
+    try {
+      final user = await _repo.getProfile();
+      _ref.read(biometricPendingProvider.notifier).state = false;
+      _ref.read(sessionVersionProvider.notifier).state++;
+      state = AuthState.authenticated(user: user);
+      final gymId = user.gymId ?? '';
+      if (gymId.isNotEmpty) {
+        unawaited(NotificationService.registerDeviceForGym(
+            gymId, _repo.updateFcmToken));
+      }
+    } catch (_) {
+      await SecureStorage.clearAll();
+      _ref.read(biometricPendingProvider.notifier).state = false;
       state = const AuthState.unauthenticated();
     }
   }

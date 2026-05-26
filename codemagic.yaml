@@ -79,6 +79,19 @@ workflows:
       - name: Get Flutter packages
         script: flutter pub get
 
+      - name: Patch firebase_messaging for modular header compatibility
+        script: |
+          PLUGIN_H=$(find "$HOME/.pub-cache/hosted/pub.dev" \
+            -path "*/firebase_messaging-*/ios/Classes/FLTFirebaseMessagingPlugin.h" | head -1)
+          if [ -n "$PLUGIN_H" ]; then
+            sed -i '' \
+              's|#import <Firebase/Firebase.h>|@import FirebaseCore;\n@import FirebaseMessaging;|g' \
+              "$PLUGIN_H"
+            echo "Patched: $PLUGIN_H"
+          else
+            echo "Warning: FLTFirebaseMessagingPlugin.h not found"
+          fi
+
       - name: Install CocoaPods dependencies
         script: find . -name "Podfile" -execdir pod install \;
 
@@ -180,6 +193,19 @@ workflows:
 
       - name: Get Flutter packages
         script: flutter pub get
+
+      - name: Patch firebase_messaging for modular header compatibility
+        script: |
+          PLUGIN_H=$(find "$HOME/.pub-cache/hosted/pub.dev" \
+            -path "*/firebase_messaging-*/ios/Classes/FLTFirebaseMessagingPlugin.h" | head -1)
+          if [ -n "$PLUGIN_H" ]; then
+            sed -i '' \
+              's|#import <Firebase/Firebase.h>|@import FirebaseCore;\n@import FirebaseMessaging;|g' \
+              "$PLUGIN_H"
+            echo "Patched: $PLUGIN_H"
+          else
+            echo "Warning: FLTFirebaseMessagingPlugin.h not found"
+          fi
 
       - name: Install CocoaPods dependencies
         script: find . -name "Podfile" -execdir pod install \;

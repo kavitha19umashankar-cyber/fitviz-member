@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -7,9 +8,39 @@ import '../app.dart';
 import '../core/notifications/notification_service.dart';
 import 'flavor_config.dart';
 
+// Runs in a separate isolate — cannot use NotificationService static instance.
+// Only handles data-only messages; notification-type messages are auto-displayed
+// by the FCM system tray.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
   await Firebase.initializeApp();
+  if (message.notification != null) return;
+
+  final title = message.data['title'] as String?;
+  final body = message.data['body'] as String?;
+  if (title == null && body == null) return;
+
+  final local = FlutterLocalNotificationsPlugin();
+  await local.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    ),
+  );
+  await local.show(
+    message.hashCode,
+    title,
+    body,
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'fitviz_main',
+        'FitViz Notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(),
+    ),
+  );
 }
 
 Future<void> main() async {

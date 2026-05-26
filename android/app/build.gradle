@@ -49,7 +49,7 @@ android {
             applicationId "in.fitviz.member"
             manifestPlaceholders += [
                 appName: "FitViz",
-                notificationChannelId: "fitviz_default"
+                notificationChannelId: "fitviz_main"
             ]
         }
         k2fitness {
@@ -57,7 +57,7 @@ android {
             applicationId "in.k2fitness.member"
             manifestPlaceholders += [
                 appName: "K2 Fitness Studio",
-                notificationChannelId: "k2fitness_default"
+                notificationChannelId: "fitviz_main"
             ]
         }
     }
@@ -70,7 +70,7 @@ android {
         versionName flutterVersionName
         manifestPlaceholders += [
             appName: "FitViz",
-            notificationChannelId: "fitviz_default"
+            notificationChannelId: "fitviz_main"
         ]
     }
 

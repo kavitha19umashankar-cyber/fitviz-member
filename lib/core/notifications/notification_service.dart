@@ -13,6 +13,13 @@ class NotificationService {
   static const _channelId = 'fitviz_main';
   static const _channelName = 'FitViz Notifications';
 
+  static const _channel = AndroidNotificationChannel(
+    _channelId,
+    _channelName,
+    importance: Importance.high,
+    enableVibration: true,
+  );
+
   /// Call once from main() after Firebase.initializeApp().
   static Future<void> initialize() async {
     const androidSettings =
@@ -24,6 +31,13 @@ class NotificationService {
         iOS: iosSettings,
       ),
     );
+
+    // Pre-register the channel so Android 8+ doesn't silently drop incoming
+    // FCM notifications that target this channel ID.
+    await _local
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_channel);
 
     // Show notification banner even when app is in foreground (iOS).
     await FirebaseMessaging.instance

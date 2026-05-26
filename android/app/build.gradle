@@ -75,12 +75,20 @@ android {
     }
 
     signingConfigs {
-        release {
+        fitvizRelease {
             if (keyPropertiesFile.exists()) {
                 keyAlias keyProperties["keyAlias"]
                 keyPassword keyProperties["keyPassword"]
                 storeFile file(keyProperties["storeFile"])
                 storePassword keyProperties["storePassword"]
+            }
+        }
+        k2fitnessRelease {
+            if (k2KeyPropertiesFile.exists()) {
+                keyAlias k2KeyProperties["keyAlias"]
+                keyPassword k2KeyProperties["keyPassword"]
+                storeFile file(k2KeyProperties["storeFile"])
+                storePassword k2KeyProperties["storePassword"]
             }
         }
     }
@@ -91,9 +99,11 @@ android {
         release {
             minifyEnabled false
             shrinkResources false
-            signingConfig keyPropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
         }
     }
+
+    productFlavors.fitviz.signingConfig = signingConfigs.fitvizRelease
+    productFlavors.k2fitness.signingConfig = signingConfigs.k2fitnessRelease
 }
 
 flutter {

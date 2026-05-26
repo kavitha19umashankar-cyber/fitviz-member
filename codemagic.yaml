@@ -16,16 +16,65 @@ workflows:
         - ios_credentials
 
     scripts:
-      - name: Set up code signing manually
-        script: |
-          echo $CM_CERTIFICATE | base64 --decode > /tmp/distribution.p12
-          echo $CM_PROVISIONING_PROFILE | base64 --decode > /tmp/fitviz.mobileprovision
-          keychain initialize
-          keychain add-certificates --certificate /tmp/distribution.p12 --certificate-password $CM_CERTIFICATE_PASSWORD
-          xcode-project use-profiles --profile /tmp/fitviz.mobileprovision
-
       - name: Disable Swift Package Manager
         script: flutter config --no-enable-swift-package-manager
+
+      - name: Set up code signing
+        script: |
+          # Decode certificate and provisioning profile
+          echo $CM_CERTIFICATE | base64 --decode > /tmp/distribution.p12
+          echo $CM_PROVISIONING_PROFILE | base64 --decode > /tmp/fitviz.mobileprovision
+
+          # Add certificate to keychain
+          keychain initialize
+          keychain add-certificates \
+            --certificate /tmp/distribution.p12 \
+            --certificate-password $CM_CERTIFICATE_PASSWORD
+
+          # Install provisioning profile (Xcode requires UUID as filename)
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+
+          PROFILE_UUID=$(security cms -D -i /tmp/fitviz.mobileprovision | \
+            python3 -c "import sys, plistlib; p = plistlib.loads(sys.stdin.buffer.read()); print(p['UUID'])")
+          PROFILE_NAME=$(security cms -D -i /tmp/fitviz.mobileprovision | \
+            python3 -c "import sys, plistlib; p = plistlib.loads(sys.stdin.buffer.read()); print(p['Name'])")
+
+          cp /tmp/fitviz.mobileprovision "$PROFILES_DIR/$PROFILE_UUID.mobileprovision"
+          echo "Installed profile: $PROFILE_NAME ($PROFILE_UUID)"
+
+          # Stamp the profile specifier into the Xcode project
+          sed -i '' \
+            "s/FITVIZ_PROFILE_PLACEHOLDER/$PROFILE_NAME/g" \
+            ios/Runner.xcodeproj/project.pbxproj
+
+          # Generate export options plist with actual profile name
+          cat > /tmp/ExportOptions-fitviz.plist << EXPORT_EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>745AM7ANGG</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>compileBitcode</key>
+              <false/>
+              <key>uploadSymbols</key>
+              <true/>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>in.fitviz.member</key>
+                  <string>$PROFILE_NAME</string>
+              </dict>
+          </dict>
+          </plist>
+          EXPORT_EOF
+          echo "Export options generated for profile: $PROFILE_NAME"
 
       - name: Get Flutter packages
         script: flutter pub get
@@ -39,7 +88,7 @@ workflows:
             --flavor fitviz \
             --target lib/flavors/main_fitviz.dart \
             --release \
-            --export-options-plist=/Users/builder/export_options.plist
+            --export-options-plist=/tmp/ExportOptions-fitviz.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -69,16 +118,65 @@ workflows:
         - ios_credentials
 
     scripts:
-      - name: Set up code signing manually
-        script: |
-          echo $CM_CERTIFICATE | base64 --decode > /tmp/distribution.p12
-          echo $CM_PROVISIONING_PROFILE_K2 | base64 --decode > /tmp/k2fitness.mobileprovision
-          keychain initialize
-          keychain add-certificates --certificate /tmp/distribution.p12 --certificate-password $CM_CERTIFICATE_PASSWORD
-          xcode-project use-profiles --profile /tmp/k2fitness.mobileprovision
-
       - name: Disable Swift Package Manager
         script: flutter config --no-enable-swift-package-manager
+
+      - name: Set up code signing
+        script: |
+          # Decode certificate and provisioning profile
+          echo $CM_CERTIFICATE | base64 --decode > /tmp/distribution.p12
+          echo $CM_PROVISIONING_PROFILE_K2 | base64 --decode > /tmp/k2fitness.mobileprovision
+
+          # Add certificate to keychain
+          keychain initialize
+          keychain add-certificates \
+            --certificate /tmp/distribution.p12 \
+            --certificate-password $CM_CERTIFICATE_PASSWORD
+
+          # Install provisioning profile (Xcode requires UUID as filename)
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+
+          PROFILE_UUID=$(security cms -D -i /tmp/k2fitness.mobileprovision | \
+            python3 -c "import sys, plistlib; p = plistlib.loads(sys.stdin.buffer.read()); print(p['UUID'])")
+          PROFILE_NAME=$(security cms -D -i /tmp/k2fitness.mobileprovision | \
+            python3 -c "import sys, plistlib; p = plistlib.loads(sys.stdin.buffer.read()); print(p['Name'])")
+
+          cp /tmp/k2fitness.mobileprovision "$PROFILES_DIR/$PROFILE_UUID.mobileprovision"
+          echo "Installed profile: $PROFILE_NAME ($PROFILE_UUID)"
+
+          # Stamp the profile specifier into the Xcode project
+          sed -i '' \
+            "s/K2FITNESS_PROFILE_PLACEHOLDER/$PROFILE_NAME/g" \
+            ios/Runner.xcodeproj/project.pbxproj
+
+          # Generate export options plist with actual profile name
+          cat > /tmp/ExportOptions-k2fitness.plist << EXPORT_EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>745AM7ANGG</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>compileBitcode</key>
+              <false/>
+              <key>uploadSymbols</key>
+              <true/>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>in.k2fitness.member</key>
+                  <string>$PROFILE_NAME</string>
+              </dict>
+          </dict>
+          </plist>
+          EXPORT_EOF
+          echo "Export options generated for profile: $PROFILE_NAME"
 
       - name: Get Flutter packages
         script: flutter pub get
@@ -92,7 +190,7 @@ workflows:
             --flavor k2fitness \
             --target lib/flavors/main_k2fitness.dart \
             --release \
-            --export-options-plist=/Users/builder/export_options.plist
+            --export-options-plist=/tmp/ExportOptions-k2fitness.plist
 
     artifacts:
       - build/ios/ipa/*.ipa

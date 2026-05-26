@@ -1,5 +1,9 @@
-# Private keys — never commit
+# Private keys and certificates — never commit
 *.pem
+*.p12
+*.cer
+*.csr
+*.mobileprovision
 
 # Flutter/Dart
 .dart_tool/

@@ -12,14 +12,11 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      integrations:
+        app_store_connect: fitviz_connect
       ios_signing:
         distribution_type: app_store
         bundle_identifier: in.fitviz.member
-      vars:
-        APP_STORE_CONNECT_ISSUER_ID: Encrypted(...)   # replace after adding key in Codemagic
-        APP_STORE_CONNECT_KEY_IDENTIFIER: Encrypted(...)
-        APP_STORE_CONNECT_PRIVATE_KEY: Encrypted(...)
-        CERTIFICATE_PRIVATE_KEY: Encrypted(...)
 
     scripts:
       - name: Get Flutter packages
@@ -45,11 +42,9 @@ workflows:
 
     publishing:
       app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        auth: integration
         submit_to_testflight: true
-        submit_to_app_store: false   # set to true when ready for App Store review
+        submit_to_app_store: false
 
   # ─────────────────────────────────────────────────────────────────────────────
   # K2 Fitness — App Store release
@@ -63,14 +58,11 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      integrations:
+        app_store_connect: fitviz_connect
       ios_signing:
         distribution_type: app_store
         bundle_identifier: in.k2fitness.member
-      vars:
-        APP_STORE_CONNECT_ISSUER_ID: Encrypted(...)   # replace after adding key in Codemagic
-        APP_STORE_CONNECT_KEY_IDENTIFIER: Encrypted(...)
-        APP_STORE_CONNECT_PRIVATE_KEY: Encrypted(...)
-        CERTIFICATE_PRIVATE_KEY: Encrypted(...)
 
     scripts:
       - name: Get Flutter packages
@@ -96,8 +88,6 @@ workflows:
 
     publishing:
       app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        auth: integration
         submit_to_testflight: true
-        submit_to_app_store: false   # set to true when ready for App Store review
+        submit_to_app_store: false

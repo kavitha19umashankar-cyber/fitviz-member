@@ -54,6 +54,10 @@
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		9740EEB41CF90195004384FC /* fitviz.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = fitviz.xcconfig; path = Flutter/fitviz.xcconfig; sourceTree = "<group>"; };
 		9740EEB51CF90195004384FC /* k2fitness.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = k2fitness.xcconfig; path = Flutter/k2fitness.xcconfig; sourceTree = "<group>"; };
+		AABBC0201CF90195004384FC /* Debug-fitviz.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = "Debug-fitviz.xcconfig"; path = "Flutter/Debug-fitviz.xcconfig"; sourceTree = "<group>"; };
+		AABBC0211CF90195004384FC /* Release-fitviz.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = "Release-fitviz.xcconfig"; path = "Flutter/Release-fitviz.xcconfig"; sourceTree = "<group>"; };
+		AABBC0221CF90195004384FC /* Debug-k2fitness.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = "Debug-k2fitness.xcconfig"; path = "Flutter/Debug-k2fitness.xcconfig"; sourceTree = "<group>"; };
+		AABBC0231CF90195004384FC /* Release-k2fitness.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = "Release-k2fitness.xcconfig"; path = "Flutter/Release-k2fitness.xcconfig"; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		97C146FB1CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -89,6 +93,10 @@
 				9740EEB31CF90195004384FC /* Generated.xcconfig */,
 				9740EEB41CF90195004384FC /* fitviz.xcconfig */,
 				9740EEB51CF90195004384FC /* k2fitness.xcconfig */,
+				AABBC0201CF90195004384FC /* Debug-fitviz.xcconfig */,
+				AABBC0211CF90195004384FC /* Release-fitviz.xcconfig */,
+				AABBC0221CF90195004384FC /* Debug-k2fitness.xcconfig */,
+				AABBC0231CF90195004384FC /* Release-k2fitness.xcconfig */,
 			);
 			name = Flutter;
 			sourceTree = "<group>";
@@ -913,7 +921,7 @@
 		};
 		AABBC0061CF9000F007C1001 /* Debug-fitviz */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB41CF90195004384FC /* fitviz.xcconfig */;
+			baseConfigurationReference = AABBC0201CF90195004384FC /* Debug-fitviz.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -935,7 +943,7 @@
 		};
 		AABBC0071CF9000F007C1001 /* Release-fitviz */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB41CF90195004384FC /* fitviz.xcconfig */;
+			baseConfigurationReference = AABBC0211CF90195004384FC /* Release-fitviz.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -960,7 +968,7 @@
 		};
 		AABBC0081CF9000F007C1001 /* Profile-fitviz */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB41CF90195004384FC /* fitviz.xcconfig */;
+			baseConfigurationReference = AABBC0211CF90195004384FC /* Release-fitviz.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -981,7 +989,7 @@
 		};
 		AABBC0091CF9000F007C1001 /* Debug-k2fitness */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB51CF90195004384FC /* k2fitness.xcconfig */;
+			baseConfigurationReference = AABBC0221CF90195004384FC /* Debug-k2fitness.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -1003,7 +1011,7 @@
 		};
 		AABBC00A1CF9000F007C1001 /* Release-k2fitness */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB51CF90195004384FC /* k2fitness.xcconfig */;
+			baseConfigurationReference = AABBC0231CF90195004384FC /* Release-k2fitness.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -1028,7 +1036,7 @@
 		};
 		AABBC00B1CF9000F007C1001 /* Profile-k2fitness */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB51CF90195004384FC /* k2fitness.xcconfig */;
+			baseConfigurationReference = AABBC0231CF90195004384FC /* Release-k2fitness.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

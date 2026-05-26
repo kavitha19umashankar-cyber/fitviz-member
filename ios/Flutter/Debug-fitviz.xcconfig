@@ -1,0 +1,4 @@
+#include "Debug.xcconfig"
+FLUTTER_TARGET=lib/flavors/main_fitviz.dart
+PRODUCT_BUNDLE_IDENTIFIER=in.fitviz.member
+APP_DISPLAY_NAME=FitViz

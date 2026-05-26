@@ -67,14 +67,16 @@ Future<void> main() async {
     ),
   );
 
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackground);
-  await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-  await NotificationService.initialize();
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackground);
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    await NotificationService.initialize();
+  } catch (_) {}
 
   runApp(const ProviderScope(child: FitVizApp()));
 }

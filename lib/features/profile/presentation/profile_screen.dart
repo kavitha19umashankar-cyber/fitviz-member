@@ -2,6 +2,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../flavors/flavor_config.dart';
@@ -14,6 +15,11 @@ import '../../../core/storage/secure_storage.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/utils/biometric_service.dart';
 import '../../feedback/data/feedback_repository.dart';
+
+final _appVersionProvider = FutureProvider<String>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return 'v${info.version}';
+});
 
 final _profileProvider = FutureProvider<UserModel>((ref) {
   ref.watch(sessionVersionProvider);
@@ -216,10 +222,13 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
         ),
         const SizedBox(height: 12),
         Center(
-          child: Text(
-            '${FlavorConfig.instance.appName} v1.0.0',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          child: ref.watch(_appVersionProvider).maybeWhen(
+                data: (v) => Text(
+                  '${FlavorConfig.instance.appName} $v',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                orElse: () => const SizedBox.shrink(),
+              ),
         ),
       ],
     );

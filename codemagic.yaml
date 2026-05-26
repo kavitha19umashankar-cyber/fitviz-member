@@ -28,6 +28,9 @@ workflows:
       - name: Install CocoaPods dependencies
         script: find . -name "Podfile" -execdir pod install \;
 
+      - name: Set up code signing
+        script: xcode-project use-profiles
+
       - name: Build iOS IPA (FitViz)
         script: |
           flutter build ipa \
@@ -75,6 +78,9 @@ workflows:
 
       - name: Install CocoaPods dependencies
         script: find . -name "Podfile" -execdir pod install \;
+
+      - name: Set up code signing
+        script: xcode-project use-profiles
 
       - name: Build iOS IPA (K2 Fitness)
         script: |

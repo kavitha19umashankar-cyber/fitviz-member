@@ -12,8 +12,6 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      integrations:
-        app_store_connect: fitviz_connect
       ios_signing:
         distribution_type: app_store
         bundle_identifier: in.fitviz.member
@@ -42,7 +40,9 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
         submit_to_app_store: false
 
@@ -58,8 +58,6 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      integrations:
-        app_store_connect: fitviz_connect
       ios_signing:
         distribution_type: app_store
         bundle_identifier: in.k2fitness.member
@@ -88,6 +86,8 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
         submit_to_app_store: false

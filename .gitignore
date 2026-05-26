@@ -1,3 +1,6 @@
+# Private keys — never commit
+*.pem
+
 # Flutter/Dart
 .dart_tool/
 .flutter-plugins

@@ -30,6 +30,10 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to unlock the app</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>FitViz reads your steps, heart rate and calories to show your daily activity alongside your gym workouts.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>FitViz saves completed workout sessions to Apple Health so your fitness data stays in sync.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Used to scan QR codes for check-in</string>
 	<key>NSPhotoLibraryUsageDescription</key>

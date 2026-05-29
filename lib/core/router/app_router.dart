@@ -12,6 +12,8 @@ import '../../features/subscription/presentation/subscription_screen.dart';
 import '../../features/progress/presentation/progress_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/feedback/presentation/feedback_screen.dart';
+import '../../features/inbox/inbox_screen.dart';
+import '../../features/achievements/presentation/achievements_screen.dart';
 import '../../shared/widgets/main_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -46,6 +48,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/feedback',
         builder: (_, __) => const FeedbackScreen(),
+      ),
+      GoRoute(
+        path: '/inbox',
+        builder: (_, __) => const InboxScreen(),
+      ),
+      GoRoute(
+        path: '/achievements',
+        builder: (_, __) => const AchievementsScreen(),
       ),
       // ── Main app (bottom nav shell) ───────────────────────────────────────
       ShellRoute(

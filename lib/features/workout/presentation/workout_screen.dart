@@ -5,6 +5,7 @@ import '../../../shared/theme/app_theme.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/providers/session_provider.dart';
 import '../data/workout_repository.dart';
+import 'workout_timer_screen.dart';
 
 final _todayPlanProvider = FutureProvider<DailyPlan?>((ref) {
   ref.watch(sessionVersionProvider);
@@ -35,7 +36,17 @@ class WorkoutScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
+        floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.darkBg,
+        icon: const Icon(Icons.timer_outlined),
+        label: const Text('Timer', style: TextStyle(fontWeight: FontWeight.w700)),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const WorkoutTimerScreen()),
+        ),
+      ),
+      appBar: AppBar(
           title: const Text('My Fitness Plan'),
           bottom: TabBar(
             indicatorColor: AppColors.primary,

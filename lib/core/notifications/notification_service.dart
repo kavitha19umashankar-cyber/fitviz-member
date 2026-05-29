@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../features/inbox/inbox_service.dart';
 
 class NotificationService {
   NotificationService._();
@@ -113,9 +114,19 @@ class NotificationService {
     } catch (_) {}
   }
 
-  static void _show(RemoteMessage message) {
+  static Future<void> _show(RemoteMessage message) async {
     final n = message.notification;
     if (n == null) return;
+
+    // Persist to the in-app inbox (SharedPreferences — no Riverpod needed here).
+    await saveInboxMessageFromFcm(
+      id: message.messageId ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
+      title: n.title ?? 'Notification',
+      body: n.body ?? '',
+      route: message.data['route'] as String?,
+    );
+
     _local.show(
       message.hashCode,
       n.title,

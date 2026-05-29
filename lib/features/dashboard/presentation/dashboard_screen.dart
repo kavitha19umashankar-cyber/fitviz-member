@@ -11,6 +11,12 @@ import '../../auth/data/models/auth_model.dart';
 import '../../workout/data/workout_repository.dart';
 import '../../../core/providers/session_provider.dart';
 import '../data/dashboard_repository.dart';
+import '../../hydration/hydration_card.dart';
+import '../../hydration/hydration_provider.dart';
+import '../../wellness/wellness_card.dart';
+import '../../wellness/wellness_provider.dart';
+import '../../health_sync/health_card.dart';
+import '../../inbox/inbox_service.dart';
 
 final _dashGymProvider = FutureProvider<GymModel?>((ref) async {
   ref.watch(sessionVersionProvider);
@@ -55,6 +61,7 @@ class DashboardScreen extends ConsumerWidget {
     final streak = FitDateUtils.attendanceStreak(
         attendance.map((a) => DateTime.tryParse(a.date) ?? DateTime.now()).toList());
     final gym = ref.watch(_dashGymProvider).valueOrNull;
+    final unreadCount = ref.watch(inboxUnreadCountProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -116,6 +123,38 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                       ],
                     ),
+                  ),
+                  // Notification inbox bell
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.notifications_outlined,
+                            color: AppColors.textSecondary),
+                        onPressed: () => context.push('/inbox'),
+                      ),
+                      if (unreadCount > 0)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                unreadCount > 9 ? '9+' : '$unreadCount',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   IconButton(
                     icon: Icon(Icons.person_outline,
@@ -382,29 +421,92 @@ class _TodayPlanCard extends StatelessWidget {
   }
 }
 
-class _QuickActions extends StatelessWidget {
+class _QuickActions extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wellness = ref.watch(wellnessProvider);
+    final hydration = ref.watch(hydrationProvider);
+
+    return Column(
       children: [
-        _ActionButton(
-          icon: Icons.login,
-          label: 'Check In',
-          onTap: () => context.go('/attendance'),
+        // Row 1 — navigation actions
+        Row(
+          children: [
+            _ActionButton(
+              icon: Icons.login,
+              label: 'Check In',
+              onTap: () => context.go('/attendance'),
+            ),
+            const SizedBox(width: 10),
+            _ActionButton(
+              icon: Icons.calendar_month,
+              label: 'Book Class',
+              onTap: () => context.go('/classes'),
+            ),
+            const SizedBox(width: 10),
+            _ActionButton(
+              icon: Icons.insights,
+              label: 'Progress',
+              onTap: () => context.go('/progress'),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        _ActionButton(
-          icon: Icons.calendar_month,
-          label: 'Book Class',
-          onTap: () => context.go('/classes'),
-        ),
-        const SizedBox(width: 10),
-        _ActionButton(
-          icon: Icons.insights,
-          label: 'Progress',
-          onTap: () => context.go('/progress'),
+        const SizedBox(height: 10),
+        // Row 2 — wellness, hydration, health
+        Row(
+          children: [
+            _ActionButton(
+              icon: Icons.mood,
+              label: 'Wellness',
+              onTap: () => _openSheet(context, const WellnessCard()),
+              badge: !wellness.checkedInToday ? '!' : null,
+              badgeColor: AppColors.warning,
+            ),
+            const SizedBox(width: 10),
+            _ActionButton(
+              icon: Icons.water_drop_outlined,
+              label: 'Hydration',
+              onTap: () => _openSheet(context, const _HydrationSheet()),
+              badge: hydration.isGoalMet ? '✓' : null,
+              badgeColor: const Color(0xFF29B6F6),
+            ),
+            const SizedBox(width: 10),
+            _ActionButton(
+              icon: Icons.watch_outlined,
+              label: 'Health',
+              onTap: () => _openSheet(context, const HealthSyncCard()),
+            ),
+          ],
         ),
       ],
+    );
+  }
+
+  void _openSheet(BuildContext context, Widget content) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.cardBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            content,
+          ],
+        ),
+      ),
     );
   }
 }
@@ -413,9 +515,16 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final String? badge;
+  final Color? badgeColor;
 
-  const _ActionButton(
-      {required this.icon, required this.label, required this.onTap});
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.badge,
+    this.badgeColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -432,7 +541,32 @@ class _ActionButton extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: AppColors.primary, size: 22),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, color: AppColors.primary, size: 22),
+                  if (badge != null)
+                    Positioned(
+                      right: -8,
+                      top: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: badgeColor ?? AppColors.primary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          badge!,
+                          style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 6),
               Text(
                 label,
@@ -929,6 +1063,25 @@ class _GymLogoPlaceholder extends StatelessWidget {
       ),
       child: Icon(Icons.fitness_center,
           color: AppColors.primary, size: 24),
+    );
+  }
+}
+
+// Wraps HydrationCard with a title for the bottom sheet context
+class _HydrationSheet extends StatelessWidget {
+  const _HydrationSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Hydration Tracker',
+            style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        const HydrationCard(),
+      ],
     );
   }
 }

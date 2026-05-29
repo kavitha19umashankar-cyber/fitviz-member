@@ -5,6 +5,7 @@ import '../../../core/utils/date_utils.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../core/providers/session_provider.dart';
 import '../data/progress_repository.dart';
+import '../../progress_photos/progress_photo_sheet.dart';
 
 final _metricsProvider = FutureProvider<List<BodyMetricModel>>(
     (ref) { ref.watch(sessionVersionProvider); return ref.read(progressRepositoryProvider).getMyMetrics(); });
@@ -59,6 +60,9 @@ class ProgressScreen extends ConsumerWidget {
                         style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 12),
                     ...metrics.map((m) => _MetricCard(metric: m)),
+                    const SizedBox(height: 24),
+                    const ProgressPhotosSection(),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),

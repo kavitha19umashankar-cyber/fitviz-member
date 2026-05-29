@@ -194,6 +194,14 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
           onTap: () => _showNotificationSettings(context),
         ),
         const SizedBox(height: 20),
+        // Achievements
+        _SectionHeader('Achievements'),
+        _ActionTile(
+          icon: Icons.emoji_events_outlined,
+          label: 'My Badges & Achievements',
+          onTap: () => context.push('/achievements'),
+        ),
+        const SizedBox(height: 20),
         // Feedback
         _SectionHeader('Feedback'),
         _ActionTile(

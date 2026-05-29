@@ -24,7 +24,13 @@ class NotificationService {
   static Future<void> initialize() async {
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings();
+    // Permissions are already requested via FirebaseMessaging.requestPermission()
+    // in main(). Setting these to false avoids a conflicting second prompt on iOS.
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     await _local.initialize(
       const InitializationSettings(
         android: androidSettings,
@@ -39,13 +45,10 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_channel);
 
-    // Show notification banner even when app is in foreground (iOS).
-    await FirebaseMessaging.instance
-        .setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    // Do NOT call setForegroundNotificationPresentationOptions here.
+    // That method tells FCM to show a native banner AND onMessage also fires _show,
+    // resulting in duplicate notifications on iOS foreground. Using only
+    // flutter_local_notifications via _show is consistent across both platforms.
 
     // Display a local notification for every foreground FCM message.
     FirebaseMessaging.onMessage.listen(_show);

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../../../flavors/flavor_config.dart';
 import 'models/auth_model.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -17,7 +18,11 @@ class AuthRepository {
   Future<AuthResponse> login(String phone, String password) async {
     final res = await _dio.post(
       ApiConstants.login,
-      data: {'phone': phone.trim(), 'password': password},
+      data: {
+        'phone': phone.trim(),
+        'password': password,
+        'appFlavor': FlavorConfig.instance.flavor.name,
+      },
     );
     // ResponseUnwrapInterceptor already strips the { success, message, data } envelope.
     // refreshToken is set as an HTTP-only cookie; extract it from Set-Cookie header.
@@ -115,6 +120,9 @@ class AuthRepository {
   }
 
   Future<void> updateFcmToken(String token) async {
-    await _dio.put(ApiConstants.updateFcm, data: {'fcmToken': token});
+    await _dio.put(ApiConstants.updateFcm, data: {
+      'fcmToken': token,
+      'appFlavor': FlavorConfig.instance.flavor.name,
+    });
   }
 }

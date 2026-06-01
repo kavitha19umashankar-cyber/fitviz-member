@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,7 +12,7 @@ import 'flavor_config.dart';
 
 // Runs in a separate isolate — cannot use NotificationService static instance.
 // Only handles data-only messages; notification-type messages are auto-displayed
-// by the FCM system tray.
+// by the FCM system tray (Android) or APNs (iOS).
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -20,11 +22,14 @@ Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
   final body = message.data['body'] as String?;
   if (title == null && body == null) return;
 
+  // flutter_local_notifications uses platform channels which are not available
+  // in background isolates on iOS — only show the local notification on Android.
+  if (Platform.isIOS) return;
+
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(
     const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-      iOS: DarwinInitializationSettings(),
     ),
   );
   await local.show(
@@ -38,7 +43,6 @@ Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
         importance: Importance.high,
         priority: Priority.high,
       ),
-      iOS: DarwinNotificationDetails(),
     ),
   );
 }

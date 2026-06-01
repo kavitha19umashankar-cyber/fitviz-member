@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -73,8 +74,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
         unawaited(NotificationService.registerDeviceForGym(
             gymId, _repo.updateFcmToken));
       }
-    } catch (_) {
-      await SecureStorage.clearAll();
+    } catch (e) {
+      // Only wipe stored tokens on a definitive auth rejection (401).
+      // Network timeouts and server errors are transient — clearing tokens
+      // here would silently log the user out on a weak connection, which
+      // unsubscribes FCM topics and breaks push notifications.
+      // The AuthInterceptor already clears storage and fires forceLogoutEvents
+      // when a 401 + failed refresh occurs, so this catch handles the rare
+      // cases the interceptor doesn't cover (e.g. 403, parse error).
+      final isAuthError = e is DioException &&
+          (e.response?.statusCode == 401 || e.response?.statusCode == 403);
+      if (isAuthError) {
+        await SecureStorage.clearAll();
+      }
       state = const AuthState.unauthenticated();
     }
   }

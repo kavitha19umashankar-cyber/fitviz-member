@@ -100,6 +100,10 @@ workflows:
       - name: Install CocoaPods dependencies
         script: find . -name "Podfile" -execdir pod install \;
 
+      - name: Set FitViz app icon
+        script: |
+          cp -r ios/Runner/Assets.xcassets/AppIcon-fitviz.appiconset/. ios/Runner/Assets.xcassets/AppIcon.appiconset/
+
       - name: Build iOS IPA (FitViz)
         script: |
           flutter build ipa \
@@ -220,6 +224,10 @@ workflows:
 
       - name: Install CocoaPods dependencies
         script: find . -name "Podfile" -execdir pod install \;
+
+      - name: Set K2 Fitness app icon
+        script: |
+          cp -r ios/Runner/Assets.xcassets/AppIcon-k2fitness.appiconset/. ios/Runner/Assets.xcassets/AppIcon.appiconset/
 
       - name: Build iOS IPA (K2 Fitness)
         script: |

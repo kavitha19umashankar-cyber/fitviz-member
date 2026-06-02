@@ -103,7 +103,7 @@ android {
     }
 
     productFlavors.fitviz.signingConfig = signingConfigs.fitvizRelease
-    productFlavors.k2fitness.signingConfig = signingConfigs.fitvizRelease
+    productFlavors.k2fitness.signingConfig = signingConfigs.k2fitnessRelease
 }
 
 flutter {

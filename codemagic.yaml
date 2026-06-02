@@ -110,7 +110,7 @@ workflows:
             --flavor fitviz \
             --target lib/flavors/main_fitviz.dart \
             --release \
-            --build-number=21 \
+            --build-number=22 \
             --export-options-plist=/tmp/ExportOptions-fitviz.plist
 
     artifacts:

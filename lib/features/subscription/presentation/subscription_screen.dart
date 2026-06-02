@@ -6,9 +6,6 @@ import '../../dashboard/data/dashboard_repository.dart';
 import '../../../core/providers/session_provider.dart';
 import '../data/subscription_repository.dart';
 
-final _plansProvider = FutureProvider<List<PlanModel>>(
-    (ref) { ref.watch(sessionVersionProvider); return ref.read(subscriptionRepositoryProvider).getPlans(); });
-
 final _currentSubProvider = FutureProvider<SubscriptionStatusModel?>(
     (ref) { ref.watch(sessionVersionProvider); return ref.read(dashboardRepositoryProvider).getMySubscription(); });
 
@@ -72,26 +69,17 @@ class _PlansTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentSub = ref.watch(_currentSubProvider).valueOrNull;
-    final plansAsync = ref.watch(_plansProvider);
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (currentSub != null) ...[
-          _CurrentSubCard(subscription: currentSub),
-          const SizedBox(height: 20),
-        ],
-        Text('Available Plans',
-            style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        plansAsync.when(
-          data: (plans) => Column(
-            children: plans.map((p) => _PlanCard(plan: p)).toList(),
+        if (currentSub != null)
+          _CurrentSubCard(subscription: currentSub)
+        else
+          const Center(
+            child: Text('No active subscription',
+                style: TextStyle(color: AppColors.textSecondary)),
           ),
-          loading: () => Center(
-              child: CircularProgressIndicator(color: AppColors.primary)),
-          error: (e, _) => Center(child: Text('Error: $e')),
-        ),
       ],
     );
   }
@@ -150,88 +138,6 @@ class _CurrentSubCard extends StatelessWidget {
               style:
                   const TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _PlanCard extends StatelessWidget {
-  final PlanModel plan;
-
-  const _PlanCard({required this.plan});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      plan.name,
-                      style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16),
-                    ),
-                    if (plan.durationDays != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        plan.durationLabel,
-                        style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 13),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (plan.price != null)
-                Text(
-                  '₹${plan.price!.toInt()}',
-                  style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 22),
-                ),
-            ],
-          ),
-          if (plan.description != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              plan.description!,
-              style: TextStyle(
-                  color: AppColors.textSecondary, fontSize: 13, height: 1.4),
-            ),
-          ],
-          if (plan.features != null && plan.features!.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            ...plan.features!.map((f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle_outline,
-                          size: 14, color: AppColors.primary),
-                      const SizedBox(width: 6),
-                      Text(f,
-                          style: TextStyle(
-                              color: AppColors.textSecondary, fontSize: 13)),
-                    ],
-                  ),
-                )),
           ],
         ],
       ),

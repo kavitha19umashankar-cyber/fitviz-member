@@ -1,7 +1,7 @@
 name: fitviz_member
 description: FitViz Member App — gym member portal for workouts, attendance, classes & payments.
 publish_to: 'none'
-version: 1.2.0+14
+version: 1.2.0+17
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -76,6 +76,13 @@ dev_dependencies:
   freezed: ^2.4.7
   flutter_lints: ^3.0.1
   mockito: ^5.4.4
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: false
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/k2fitness/icons/app_icon.png"
 
 flutter:
   uses-material-design: true

@@ -106,7 +106,7 @@ workflows:
             --flavor fitviz \
             --target lib/flavors/main_fitviz.dart \
             --release \
-            --build-number=$(grep '^version:' pubspec.yaml | sed 's/.*+//') \
+            --build-number=19 \
             --export-options-plist=/tmp/ExportOptions-fitviz.plist
 
     artifacts:
@@ -227,7 +227,7 @@ workflows:
             --flavor k2fitness \
             --target lib/flavors/main_k2fitness.dart \
             --release \
-            --build-number=$(grep '^version:' pubspec.yaml | sed 's/.*+//') \
+            --build-number=19 \
             --export-options-plist=/tmp/ExportOptions-k2fitness.plist
 
     artifacts:

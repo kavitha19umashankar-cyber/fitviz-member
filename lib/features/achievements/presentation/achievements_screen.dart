@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../../../core/providers/session_provider.dart';
+import '../../../core/utils/date_utils.dart';
+import '../../attendance/data/attendance_repository.dart';
 import '../data/achievement_repository.dart';
 
 // Icon mapping for string icon names from the API
@@ -21,36 +24,118 @@ IconData _iconFor(String icon) {
   }
 }
 
-// Fallback local badges when the API returns empty (computed client-side)
-List<Achievement> _localBadges(List<Achievement> apiList) {
-  if (apiList.isNotEmpty) return apiList;
-  // Show placeholder locked badges so the screen always has content
-  return const [
-    Achievement(id: 'first_checkin', name: 'First Step', description: 'Complete your first gym check-in', icon: 'star', category: 'Attendance', earned: false),
-    Achievement(id: 'streak_7', name: '7-Day Warrior', description: 'Attend the gym 7 days in a row', icon: 'fire', category: 'Streaks', earned: false),
-    Achievement(id: 'streak_30', name: '30-Day Legend', description: 'Attend 30 consecutive days', icon: 'crown', category: 'Streaks', earned: false),
-    Achievement(id: 'early_bird', name: 'Early Bird', description: 'Check in before 7 AM', icon: 'clock', category: 'Attendance', earned: false),
-    Achievement(id: 'class_10', name: 'Class Regular', description: 'Book 10 group classes', icon: 'calendar', category: 'Classes', earned: false),
-    Achievement(id: 'workouts_100', name: 'Century Club', description: 'Complete 100 workout sessions', icon: 'trophy', category: 'Workouts', earned: false),
-    Achievement(id: 'workout_first', name: 'First Sweat', description: 'Complete your first workout plan', icon: 'dumbbell', category: 'Workouts', earned: false),
-    Achievement(id: 'streak_14', name: '2-Week Grind', description: 'Attend 14 consecutive days', icon: 'bolt', category: 'Streaks', earned: false),
-  ];
+const _allBadges = <Achievement>[
+  Achievement(id: 'first_checkin', name: 'First Step', description: 'Complete your first gym check-in', icon: 'star', category: 'Attendance', earned: false),
+  Achievement(id: 'streak_7', name: '7-Day Warrior', description: 'Attend the gym 7 days in a row', icon: 'fire', category: 'Streaks', earned: false),
+  Achievement(id: 'streak_14', name: '2-Week Grind', description: 'Attend 14 consecutive days', icon: 'bolt', category: 'Streaks', earned: false),
+  Achievement(id: 'streak_30', name: '30-Day Legend', description: 'Attend 30 consecutive days', icon: 'crown', category: 'Streaks', earned: false),
+  Achievement(id: 'early_bird', name: 'Early Bird', description: 'Check in before 7 AM', icon: 'clock', category: 'Attendance', earned: false),
+  Achievement(id: 'class_10', name: 'Class Regular', description: 'Book 10 group classes', icon: 'calendar', category: 'Classes', earned: false),
+  Achievement(id: 'workouts_100', name: 'Century Club', description: 'Complete 100 workout sessions', icon: 'trophy', category: 'Workouts', earned: false),
+  Achievement(id: 'workout_first', name: 'First Sweat', description: 'Complete your first workout plan', icon: 'dumbbell', category: 'Workouts', earned: false),
+];
+
+/// Evaluates attendance-based achievements client-side when the backend
+/// hasn't awarded them yet.
+List<Achievement> _applyAttendance(
+    List<Achievement> badges, AttendanceResult attendance) {
+  final records = attendance.records;
+  final totalDays = attendance.stats?.totalDays ?? records.length;
+  final streak = FitDateUtils.attendanceStreak(
+      records.map((r) => r.localDate).toList());
+  final hasEarlyBird = records.any((r) {
+    final ci = r.checkInTime;
+    return ci != null && ci.hour < 7;
+  });
+
+  return badges.map((b) {
+    bool earned = b.earned;
+    DateTime? earnedAt = b.earnedAt;
+
+    if (!earned) {
+      switch (b.id) {
+        case 'first_checkin':
+          earned = totalDays >= 1;
+          if (earned && records.isNotEmpty) {
+            earnedAt = records
+                .map((r) => r.localDate)
+                .reduce((a, b) => a.isBefore(b) ? a : b);
+          }
+          break;
+        case 'streak_7':
+          earned = streak >= 7;
+          break;
+        case 'streak_14':
+          earned = streak >= 14;
+          break;
+        case 'streak_30':
+          earned = streak >= 30;
+          break;
+        case 'early_bird':
+          earned = hasEarlyBird;
+          break;
+      }
+    }
+
+    if (earned == b.earned) return b;
+    return Achievement(
+      id: b.id,
+      name: b.name,
+      description: b.description,
+      icon: b.icon,
+      category: b.category,
+      earned: earned,
+      earnedAt: earnedAt,
+    );
+  }).toList();
 }
+
+/// Merges API achievements with client-side attendance evaluation.
+/// If the backend has already marked any achievements as earned, those are
+/// used as-is. Otherwise attendance data is used to compute earned status
+/// so badges reflect reality even when the backend hasn't awarded them yet.
+final resolvedAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
+  ref.watch(sessionVersionProvider);
+
+  final apiAchievements =
+      await ref.read(achievementRepositoryProvider).getMyAchievements();
+
+  // Backend is actively awarding achievements — trust it.
+  if (apiAchievements.any((a) => a.earned)) return apiAchievements;
+
+  // Backend returned nothing or all-locked; evaluate from attendance.
+  final badges = apiAchievements.isEmpty ? _allBadges : apiAchievements;
+  try {
+    final attendance =
+        await ref.read(attendanceRepositoryProvider).getMyAttendance();
+    return _applyAttendance(badges, attendance);
+  } catch (_) {
+    return badges;
+  }
+});
 
 class AchievementsScreen extends ConsumerWidget {
   const AchievementsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(myAchievementsProvider);
+    final async = ref.watch(resolvedAchievementsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Achievements')),
       body: async.when(
         loading: () =>
             Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (_, __) => _BadgeGrid(badges: _localBadges([])),
-        data: (list) => _BadgeGrid(badges: _localBadges(list)),
+        error: (_, __) => RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async => ref.invalidate(resolvedAchievementsProvider),
+          child: _BadgeGrid(badges: _allBadges),
+        ),
+        data: (list) => RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async => ref.invalidate(resolvedAchievementsProvider),
+          child: _BadgeGrid(badges: list),
+        ),
       ),
     );
   }

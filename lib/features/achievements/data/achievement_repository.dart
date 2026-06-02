@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/providers/session_provider.dart';
 
 class Achievement {
   final String id;
@@ -35,34 +36,8 @@ class Achievement {
 }
 
 class AchievementRepository {
-  final _dio = _DioWrapper();
-
-  Future<List<Achievement>> getMyAchievements() async {
-    try {
-      final dio = _dio.dio;
-      final res = await dio.get(ApiConstants.myAchievements);
-      final data = res.data;
-      if (data is List) {
-        return data
-            .map((e) => Achievement.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-}
-
-class _DioWrapper {
-  late final dynamic dio;
-  _DioWrapper();
-}
-
-// Riverpod wiring
-class _AchievementRepositoryImpl {
   final dynamic _dio;
-  _AchievementRepositoryImpl(this._dio);
+  AchievementRepository(this._dio);
 
   Future<List<Achievement>> getMyAchievements() async {
     try {
@@ -81,10 +56,11 @@ class _AchievementRepositoryImpl {
 }
 
 final achievementRepositoryProvider =
-    Provider<_AchievementRepositoryImpl>((ref) {
-  return _AchievementRepositoryImpl(ref.read(dioProvider));
+    Provider<AchievementRepository>((ref) {
+  return AchievementRepository(ref.read(dioProvider));
 });
 
 final myAchievementsProvider = FutureProvider<List<Achievement>>((ref) {
+  ref.watch(sessionVersionProvider);
   return ref.read(achievementRepositoryProvider).getMyAchievements();
 });

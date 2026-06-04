@@ -1,6 +1,56 @@
 workflows:
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # FitViz — Play Store AAB release
+  # ─────────────────────────────────────────────────────────────────────────────
+  fitviz-android-release:
+    name: FitViz Android Release
+    max_build_duration: 60
+    instance_type: linux_x2
+
+    environment:
+      flutter: stable
+      groups:
+        - android_credentials
+
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+
+      - name: Write google-services.json
+        script: |
+          echo $GOOGLE_SERVICES_JSON_FITVIZ | base64 --decode \
+            > android/app/google-services.json
+
+      - name: Set up keystore
+        script: |
+          echo $FITVIZ_KEYSTORE | base64 --decode > android/fitviz-keystore.jks
+          cat > android/key.properties << EOF
+          keyAlias=$FITVIZ_KEY_ALIAS
+          keyPassword=$FITVIZ_KEY_PASSWORD
+          storeFile=fitviz-keystore.jks
+          storePassword=$FITVIZ_STORE_PASSWORD
+          EOF
+
+      - name: Build Android AAB (FitViz)
+        script: |
+          flutter build appbundle \
+            --flavor fitviz \
+            --target lib/flavors/main_fitviz.dart \
+            --release \
+            --build-number=23
+
+    artifacts:
+      - build/app/outputs/bundle/fitvizRelease/app-fitviz-release.aab
+      - build/app/outputs/mapping/fitvizRelease/mapping.txt
+
+    publishing:
+      google_play:
+        credentials: $GPLAY_SERVICE_ACCOUNT_JSON
+        track: internal
+        submit_as_draft: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # FitViz — App Store release
   # ─────────────────────────────────────────────────────────────────────────────
   fitviz-ios-release:

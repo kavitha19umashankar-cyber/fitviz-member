@@ -48,10 +48,10 @@ class _PermissionPrompt extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: const Color(0xFFFF3B30).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.watch_outlined, color: AppColors.primary, size: 22),
+              child: const Icon(Icons.favorite, color: Color(0xFFFF3B30), size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -59,7 +59,7 @@ class _PermissionPrompt extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Connect Health Data',
+                    'Connect Apple Health',
                     style: TextStyle(
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
@@ -68,7 +68,7 @@ class _PermissionPrompt extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Sync steps, heart rate & calories from your watch',
+                    'Read steps, heart rate & calories from Apple Health',
                     style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                   ),
                 ],
@@ -100,10 +100,10 @@ class _HealthMetricsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.watch_outlined, color: AppColors.primary, size: 16),
+              const Icon(Icons.favorite, color: Color(0xFFFF3B30), size: 16),
               const SizedBox(width: 6),
               Text(
-                'Today\'s Activity',
+                'Apple Health',
                 style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 12,

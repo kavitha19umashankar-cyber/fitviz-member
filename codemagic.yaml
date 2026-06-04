@@ -110,7 +110,7 @@ workflows:
             --flavor fitviz \
             --target lib/flavors/main_fitviz.dart \
             --release \
-            --build-number=22 \
+            --build-number=23 \
             --export-options-plist=/tmp/ExportOptions-fitviz.plist
 
     artifacts:
@@ -235,7 +235,7 @@ workflows:
             --flavor k2fitness \
             --target lib/flavors/main_k2fitness.dart \
             --release \
-            --build-number=21 \
+            --build-number=22 \
             --export-options-plist=/tmp/ExportOptions-k2fitness.plist
 
     artifacts:

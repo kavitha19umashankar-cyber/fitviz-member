@@ -25,6 +25,8 @@ Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
 
   // flutter_local_notifications uses platform channels which are not available
   // in background isolates on iOS — only show the local notification on Android.
+  // For iOS, the backend FCM payload must include a `notification` key so APNs
+  // auto-displays it, AND set apns-priority=10 so it is not batched/delayed.
   if (!Platform.isAndroid) return;
 
   final local = FlutterLocalNotificationsPlugin();

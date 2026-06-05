@@ -15,7 +15,6 @@ import '../../hydration/hydration_card.dart';
 import '../../hydration/hydration_provider.dart';
 import '../../wellness/wellness_card.dart';
 import '../../wellness/wellness_provider.dart';
-import '../../health_sync/health_card.dart';
 import '../../inbox/inbox_service.dart';
 
 final _dashGymProvider = FutureProvider<GymModel?>((ref) async {
@@ -472,9 +471,9 @@ class _QuickActions extends ConsumerWidget {
             ),
             const SizedBox(width: 10),
             _ActionButton(
-              icon: Icons.watch_outlined,
-              label: 'Health',
-              onTap: () => _openSheet(context, const HealthSyncCard()),
+              icon: Icons.card_membership_outlined,
+              label: 'Plans',
+              onTap: () => context.push('/subscription'),
             ),
           ],
         ),

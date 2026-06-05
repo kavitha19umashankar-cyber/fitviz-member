@@ -54,9 +54,6 @@ dependencies:
   # Biometric authentication
   local_auth: ^2.3.0
 
-  # Health data (Apple HealthKit / Google Health Connect)
-  health: ^11.0.0
-
   # App documents directory for progress photos
   path_provider: ^2.1.4
 

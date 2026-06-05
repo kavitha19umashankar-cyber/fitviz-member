@@ -2,3 +2,4 @@
 FLUTTER_TARGET=lib/flavors/main_k2fitness.dart
 PRODUCT_BUNDLE_IDENTIFIER=in.k2fitness.member
 APP_DISPLAY_NAME=K2 Fitness Studio
+FLUTTER_BUILD_NUMBER=23

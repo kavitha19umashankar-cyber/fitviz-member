@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'app.dart';
 import 'flavors/flavor_config.dart';
 
@@ -32,7 +33,7 @@ Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(
     const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings('@drawable/ic_notification'),
     ),
   );
   await local.show(
@@ -42,26 +43,41 @@ Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
     const NotificationDetails(
       android: AndroidNotificationDetails(
         'fitviz_main',
-        'FitViz Notifications',
+        'App Notifications',
         importance: Importance.high,
         priority: Priority.high,
+        icon: '@drawable/ic_notification',
+        largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       ),
     ),
   );
 }
 
-// Default entry point — FitViz flavor.
-// Use lib/flavors/main_k2fitness.dart (or other) for white-label builds.
+// Single entry point for all flavors.
+// Detects the brand at runtime from the installed package name so the correct
+// FlavorConfig is loaded regardless of which --target was used at build time.
 Future<void> main() async {
-  FlavorConfig.instance = const FlavorConfig(
-    flavor: Flavor.fitviz,
-    appName: 'FitViz',
-    appTagline: 'Your Fitness Journey',
-    primaryColor: Color(0xFFC8FF00),
-    logoAssetPath: 'assets/fitviz/images/logo.png',
-  );
-
   WidgetsFlutterBinding.ensureInitialized();
+
+  final info = await PackageInfo.fromPlatform();
+  if (info.packageName == 'in.k2fitness.member') {
+    FlavorConfig.instance = const FlavorConfig(
+      flavor: Flavor.k2fitness,
+      appName: 'K2 Fitness Studio',
+      appTagline: 'Train Hard. Stay Fit.',
+      brandParentGymId: 'GYM-002',
+      primaryColor: Color(0xFFEFBE02),
+      logoAssetPath: 'assets/k2fitness/images/logo.png',
+    );
+  } else {
+    FlavorConfig.instance = const FlavorConfig(
+      flavor: Flavor.fitviz,
+      appName: 'FitViz',
+      appTagline: 'Your Fitness Journey',
+      primaryColor: Color(0xFFC8FF00),
+      logoAssetPath: 'assets/fitviz/images/logo.png',
+    );
+  }
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

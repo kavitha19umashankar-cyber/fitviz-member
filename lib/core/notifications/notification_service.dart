@@ -24,7 +24,7 @@ class NotificationService {
   /// Call once from main() after Firebase.initializeApp().
   static Future<void> initialize() async {
     const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/ic_notification');
     // Permissions are already requested via FirebaseMessaging.requestPermission()
     // in main(). Setting these to false avoids a conflicting second prompt on iOS.
     const iosSettings = DarwinInitializationSettings(
@@ -137,6 +137,8 @@ class NotificationService {
           _channelName,
           importance: Importance.high,
           priority: Priority.high,
+          icon: '@drawable/ic_notification',
+          largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
         ),
         iOS: DarwinNotificationDetails(),
       ),

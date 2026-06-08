@@ -26,6 +26,21 @@ if (k2KeyPropertiesFile.exists()) {
     k2KeyPropertiesFile.withReader("UTF-8") { reader -> k2KeyProperties.load(reader) }
 }
 
+// Set the correct Dart entry point per flavor so Android mirrors the iOS xcconfig behaviour.
+// The Flutter Gradle plugin reads project.ext['target'] during configuration.
+def flavorTargets = [
+    'fitviz'   : 'lib/flavors/main_fitviz.dart',
+    'k2fitness': 'lib/flavors/main_k2fitness.dart',
+]
+for (taskName in gradle.startParameter.taskNames) {
+    for (entry in flavorTargets) {
+        if (taskName.toLowerCase().contains(entry.key)) {
+            project.ext.set('target', entry.value)
+            break
+        }
+    }
+}
+
 android {
     namespace "in.fitviz.member"
     compileSdk 36
@@ -47,7 +62,7 @@ android {
         fitviz {
             dimension "brand"
             applicationId "in.fitviz.member"
-            versionCode 25
+            versionCode 26
             manifestPlaceholders += [
                 appName: "FitViz",
                 notificationChannelId: "fitviz_main"
@@ -56,7 +71,7 @@ android {
         k2fitness {
             dimension "brand"
             applicationId "in.k2fitness.member"
-            versionCode 27
+            versionCode 28
             manifestPlaceholders += [
                 appName: "K2 Fitness Studio",
                 notificationChannelId: "fitviz_main"
@@ -105,7 +120,7 @@ android {
     }
 
     productFlavors.fitviz.signingConfig = signingConfigs.fitvizRelease
-    productFlavors.k2fitness.signingConfig = signingConfigs.fitvizRelease
+    productFlavors.k2fitness.signingConfig = signingConfigs.k2fitnessRelease
 }
 
 flutter {

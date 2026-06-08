@@ -29,7 +29,7 @@ Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(
     const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings('@drawable/ic_notification'),
     ),
   );
   await local.show(
@@ -39,9 +39,11 @@ Future<void> _firebaseMessagingBackground(RemoteMessage message) async {
     const NotificationDetails(
       android: AndroidNotificationDetails(
         'fitviz_main',
-        'FitViz Notifications',
+        'K2 Fitness Notifications',
         importance: Importance.high,
         priority: Priority.high,
+        icon: '@drawable/ic_notification',
+        largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       ),
     ),
   );

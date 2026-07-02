@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../core/providers/session_provider.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/workout/presentation/workout_screen.dart';
 import '../../features/attendance/presentation/attendance_screen.dart';
@@ -23,10 +24,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/dashboard',
     refreshListenable: _AuthStateNotifier(ref),
     redirect: (context, state) {
-      final authState = ref.read(authProvider);
+      final authState      = ref.read(authProvider);
       final isAuthenticated = authNotifier.isAuthenticated;
-      final isInitial = authState.maybeWhen(initial: () => true, orElse: () => false);
-      final isOnAuth = state.uri.path.startsWith('/auth');
+      final isInitial      = authState.maybeWhen(initial: () => true, orElse: () => false);
+      final isOnAuth       = state.uri.path.startsWith('/auth');
 
       // Still initializing (checking stored session)
       if (isInitial) return null;
@@ -101,13 +102,13 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-/// Bridges Riverpod auth state changes into a [Listenable] so go_router
-/// re-evaluates its redirect whenever the auth state changes.
+/// Bridges Riverpod state changes into a [Listenable] so go_router
+/// re-evaluates its redirect whenever auth state changes.
 class _AuthStateNotifier extends ChangeNotifier {
-  late final ProviderSubscription<AuthState> _sub;
+  late final ProviderSubscription<AuthState> _authSub;
 
   _AuthStateNotifier(Ref ref) {
-    _sub = ref.listen<AuthState>(
+    _authSub = ref.listen<AuthState>(
       authProvider,
       (_, __) => notifyListeners(),
       fireImmediately: false,
@@ -116,8 +117,7 @@ class _AuthStateNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
-    _sub.close();
+    _authSub.close();
     super.dispose();
   }
 }
-

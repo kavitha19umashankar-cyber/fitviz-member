@@ -218,7 +218,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
               const SizedBox(height: 16),
               // ── Quick actions ─────────────────────────────────────────────
-              _QuickActions(),
+              const _QuickActions(),
               const SizedBox(height: 20),
               // ── Announcements ─────────────────────────────────────────────
               ref.watch(_dashAnnouncementsProvider).when(
@@ -421,6 +421,8 @@ class _TodayPlanCard extends StatelessWidget {
 }
 
 class _QuickActions extends ConsumerWidget {
+  const _QuickActions();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wellness = ref.watch(wellnessProvider);

@@ -12,6 +12,8 @@ class UserModel {
   final String? gymId;
   final String? profilePhoto;
   final bool isActive;
+  @JsonKey(defaultValue: true)
+  final bool mobileAppEnabled;
   final Map<String, dynamic>? memberProfile;
 
   const UserModel({
@@ -23,6 +25,7 @@ class UserModel {
     this.gymId,
     this.profilePhoto,
     this.isActive = true,
+    this.mobileAppEnabled = true,
     this.memberProfile,
   });
 

@@ -51,6 +51,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _checkSession() async {
     final hasSession = await SecureStorage.hasSession();
+
     if (!hasSession) {
       state = const AuthState.unauthenticated();
       return;
@@ -238,6 +239,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state is _Authenticated;
 
   String _friendlyError(Object e) {
+    if (e is DioException) {
+      final status = e.response?.statusCode;
+      if (status == 403) {
+        final serverMsg = e.response?.data?['message'] as String?;
+        if (serverMsg != null && serverMsg.isNotEmpty) return serverMsg;
+        return 'Access denied. Please contact your gym.';
+      }
+      if (status == 401) return 'Invalid phone number or password. Please try again.';
+      if (status == 429) return 'Too many attempts. Please wait a moment.';
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.unknown) {
+        return 'No internet connection. Please check your network.';
+      }
+    }
     final msg = e.toString().toLowerCase();
     if (msg.contains('401') || msg.contains('invalid credentials')) {
       return 'Invalid phone number or password. Please try again.';

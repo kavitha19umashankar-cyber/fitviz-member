@@ -7,6 +7,7 @@ import '../../../core/storage/secure_storage.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/providers/session_provider.dart';
 import '../data/attendance_repository.dart';
+import '../../workout/presentation/workout_screen.dart' show todayAttendanceProvider;
 
 // Current-month provider used by the Check In tab
 final _myAttendanceProvider = FutureProvider<AttendanceResult>((ref) {
@@ -60,6 +61,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen>
     try {
       await ref.read(attendanceRepositoryProvider).checkOut();
       ref.invalidate(_myAttendanceProvider);
+      ref.invalidate(todayAttendanceProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

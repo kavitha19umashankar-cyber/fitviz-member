@@ -15,6 +15,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       gymId: json['gymId'] as String?,
       profilePhoto: json['profilePhoto'] as String?,
       isActive: json['isActive'] as bool? ?? true,
+      mobileAppEnabled: json['mobileAppEnabled'] as bool? ?? true,
       memberProfile: json['memberProfile'] as Map<String, dynamic>?,
     );
 
@@ -27,6 +28,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'gymId': instance.gymId,
       'profilePhoto': instance.profilePhoto,
       'isActive': instance.isActive,
+      'mobileAppEnabled': instance.mobileAppEnabled,
       'memberProfile': instance.memberProfile,
     };
 

@@ -5,11 +5,19 @@ import '../../../shared/theme/app_theme.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/providers/session_provider.dart';
 import '../data/workout_repository.dart';
+import '../../attendance/data/attendance_repository.dart';
 import 'workout_timer_screen.dart';
 
 final _todayPlanProvider = FutureProvider<DailyPlan?>((ref) {
   ref.watch(sessionVersionProvider);
   return ref.read(workoutRepositoryProvider).getTodayPlan();
+});
+
+// Exported so attendance_screen can invalidate it after check-in/check-out
+final todayAttendanceProvider = FutureProvider<bool>((ref) async {
+  ref.watch(sessionVersionProvider);
+  final result = await ref.read(attendanceRepositoryProvider).getMyAttendance();
+  return result.records.any((r) => r.isToday && r.checkIn != null);
 });
 
 // History tab: selected month (defaults to current month)
@@ -85,14 +93,15 @@ class WorkoutScreen extends ConsumerWidget {
   }
 }
 
-class _TodayPlanView extends StatelessWidget {
+class _TodayPlanView extends ConsumerWidget {
   final DailyPlan plan;
 
   const _TodayPlanView({required this.plan});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (plan.isRestDay) {
+      final hasAttendance = ref.watch(todayAttendanceProvider).valueOrNull ?? false;
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -107,11 +116,20 @@ class _TodayPlanView extends StatelessWidget {
                   color: AppColors.textPrimary),
             ),
             SizedBox(height: 8),
-            Text(
-              'Take it easy. Recovery is part of progress.',
-              style: TextStyle(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
+            if (hasAttendance) ...[
+              _StatusBadge(status: 'COMPLETED'),
+              SizedBox(height: 8),
+              Text(
+                'Great job showing up! Rest day completed.',
+                style: TextStyle(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ] else
+              Text(
+                'Take it easy. Recovery is part of progress.',
+                style: TextStyle(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
           ],
         ),
       );

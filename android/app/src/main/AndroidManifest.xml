@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Network access -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -18,9 +19,11 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
 
-    <!-- Storage — for image picker -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <!-- Storage — Android ≤12 only; Android 13+ uses system photo picker (no media perms needed) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <!-- Explicitly remove media permissions to satisfy Google Play policy -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
 
     <application
         android:label="${appName}"

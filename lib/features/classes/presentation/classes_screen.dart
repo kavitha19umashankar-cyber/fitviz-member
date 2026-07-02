@@ -129,32 +129,35 @@ class _ScheduleTab extends ConsumerWidget {
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: classes.length,
-            itemBuilder: (_, i) => _ClassCard(
-              cls: classes[i],
-              onBook: () async {
-                try {
-                  await ref
-                      .read(classesRepositoryProvider)
-                      .bookClass(classes[i].id, classes[i].nextDate ?? DateTime.now().toIso8601String().substring(0, 10));
-                  onBooked();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Class booked!'),
-                          backgroundColor: AppColors.success),
-                    );
+            itemBuilder: (_, i) {
+              final cls = classes[i];
+              return _ClassCard(
+                cls: cls,
+                onBook: () async {
+                  try {
+                    await ref
+                        .read(classesRepositoryProvider)
+                        .bookClass(cls.id, cls.nextDate ?? DateTime.now().toIso8601String().substring(0, 10));
+                    onBooked();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Class booked!'),
+                            backgroundColor: AppColors.success),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Failed to book: $e'),
+                            backgroundColor: AppColors.error),
+                      );
+                    }
                   }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('Failed to book: $e'),
-                          backgroundColor: AppColors.error),
-                    );
-                  }
-                }
-              },
-            ),
+                },
+              );
+            },
           ),
         );
       },

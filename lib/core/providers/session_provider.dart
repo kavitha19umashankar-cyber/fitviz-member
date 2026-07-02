@@ -8,3 +8,4 @@ final sessionVersionProvider = StateProvider<int>((ref) => 0);
 /// True when the app has a stored session but is waiting for the user
 /// to pass biometric authentication before restoring it.
 final biometricPendingProvider = StateProvider<bool>((ref) => false);
+

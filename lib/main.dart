@@ -68,6 +68,7 @@ Future<void> main() async {
       brandParentGymId: 'GYM-002',
       primaryColor: Color(0xFFEFBE02),
       logoAssetPath: 'assets/k2fitness/images/logo.png',
+      contactPhone: '8122126376',
     );
   } else {
     FlavorConfig.instance = const FlavorConfig(
@@ -94,7 +95,9 @@ Future<void> main() async {
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackground);
   await FirebaseMessaging.instance.requestPermission(
-    alert: true, badge: true, sound: true,
+    alert: true,
+    badge: true,
+    sound: true,
   );
   await NotificationService.initialize();
 

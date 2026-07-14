@@ -15,6 +15,8 @@ import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/feedback/presentation/feedback_screen.dart';
 import '../../features/inbox/inbox_screen.dart';
 import '../../features/achievements/presentation/achievements_screen.dart';
+import '../../features/about/presentation/why_k2_screen.dart';
+import '../../features/about/presentation/privacy_policy_screen.dart';
 import '../../shared/widgets/main_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -24,10 +26,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/dashboard',
     refreshListenable: _AuthStateNotifier(ref),
     redirect: (context, state) {
-      final authState      = ref.read(authProvider);
+      final authState = ref.read(authProvider);
       final isAuthenticated = authNotifier.isAuthenticated;
-      final isInitial      = authState.maybeWhen(initial: () => true, orElse: () => false);
-      final isOnAuth       = state.uri.path.startsWith('/auth');
+      final isInitial =
+          authState.maybeWhen(initial: () => true, orElse: () => false);
+      final isOnAuth = state.uri.path.startsWith('/auth');
 
       // Still initializing (checking stored session)
       if (isInitial) return null;
@@ -57,6 +60,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/achievements',
         builder: (_, __) => const AchievementsScreen(),
+      ),
+      GoRoute(
+        path: '/about/why-k2',
+        builder: (_, __) => const WhyK2Screen(),
+      ),
+      GoRoute(
+        path: '/about/privacy-policy',
+        builder: (_, __) => const PrivacyPolicyScreen(),
       ),
       // ── Main app (bottom nav shell) ───────────────────────────────────────
       ShellRoute(
@@ -94,6 +105,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/dashboard'),
+        ),
+      ),
       body: Center(
         child: Text('Page not found: ${state.uri.path}',
             style: const TextStyle(color: Colors.white)),

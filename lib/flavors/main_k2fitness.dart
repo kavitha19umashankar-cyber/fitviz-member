@@ -54,9 +54,11 @@ Future<void> main() async {
     flavor: Flavor.k2fitness,
     appName: 'K2 Fitness Studio',
     appTagline: 'Train Hard. Stay Fit.',
-    brandParentGymId: 'GYM-002', // K2 brand root — scopes gym list to GYM-002 + its child branches
+    brandParentGymId:
+        'GYM-002', // K2 brand root — scopes gym list to GYM-002 + its child branches
     primaryColor: Color(0xFFEFBE02),
     logoAssetPath: 'assets/k2fitness/images/logo.png',
+    contactPhone: '8122126376',
   );
 
   WidgetsFlutterBinding.ensureInitialized();

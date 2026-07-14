@@ -100,7 +100,8 @@ class AuthRepository {
     });
   }
 
-  Future<void> resetPassword(String phone, String otp, String newPassword) async {
+  Future<void> resetPassword(
+      String phone, String otp, String newPassword) async {
     await _dio.post(ApiConstants.resetPassword, data: {
       'identifier': phone.trim(),
       'otp': otp.trim(),
@@ -108,10 +109,20 @@ class AuthRepository {
     });
   }
 
+  Future<void> changePassword(
+      String currentPassword, String newPassword) async {
+    await _dio.put(ApiConstants.changePassword, data: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
   Future<List<GymModel>> getActiveGyms() async {
     final res = await _dio.get(ApiConstants.activeGyms);
     final list = (res.data as List<dynamic>?) ?? [];
-    return list.map((e) => GymModel.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => GymModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<UserModel> getProfile() async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../flavors/flavor_config.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../core/utils/validators.dart';
@@ -47,6 +48,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _triggerBiometric() async {
     await ref.read(authProvider.notifier).loginWithBiometric();
+  }
+
+  Future<void> _callSupport(String phone) async {
+    await launchUrl(Uri(scheme: 'tel', path: phone));
   }
 
   @override
@@ -227,6 +232,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         )
                       : const Text('Sign In'),
                 ),
+                if (FlavorConfig.instance.contactPhone != null) ...[
+                  const SizedBox(height: 24),
+                  Center(
+                    child: GestureDetector(
+                      onTap: () =>
+                          _callSupport(FlavorConfig.instance.contactPhone!),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.call_outlined,
+                              size: 16, color: AppColors.textSecondary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Need help? Call ${FlavorConfig.instance.contactPhone}',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

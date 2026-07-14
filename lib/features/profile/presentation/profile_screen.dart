@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,7 @@ import '../../../core/providers/session_provider.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/utils/biometric_service.dart';
+import '../../../core/utils/validators.dart';
 import '../../feedback/data/feedback_repository.dart';
 
 final _appVersionProvider = FutureProvider<String>((ref) async {
@@ -30,7 +32,6 @@ final _referralCodeProvider = FutureProvider<String?>((ref) {
   ref.watch(sessionVersionProvider);
   return ref.read(feedbackRepositoryProvider).getReferralCode();
 });
-
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -89,10 +90,10 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
               CircleAvatar(
                 radius: 44,
                 backgroundColor: AppColors.surface,
-                backgroundImage: widget.user.profilePhoto != null
-                    ? NetworkImage(widget.user.profilePhoto!)
+                backgroundImage: widget.user.fullProfilePhotoUrl != null
+                    ? NetworkImage(widget.user.fullProfilePhotoUrl!)
                     : null,
-                child: widget.user.profilePhoto == null
+                child: widget.user.fullProfilePhotoUrl == null
                     ? Text(
                         widget.user.name.isNotEmpty
                             ? widget.user.name[0].toUpperCase()
@@ -126,12 +127,20 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
               icon: Icons.badge_outlined,
               label: 'Member ID',
               value: '#${widget.user.membershipId}'),
-        _InfoTile(icon: Icons.person_outline, label: 'Full Name', value: widget.user.name),
+        _InfoTile(
+            icon: Icons.person_outline,
+            label: 'Full Name',
+            value: widget.user.name),
         if (widget.user.email != null)
-          _InfoTile(icon: Icons.email_outlined, label: 'Email', value: widget.user.email!),
+          _InfoTile(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: widget.user.email!),
         if (widget.user.phone != null)
           _InfoTile(
-              icon: Icons.phone_outlined, label: 'Phone', value: widget.user.phone!),
+              icon: Icons.phone_outlined,
+              label: 'Phone',
+              value: widget.user.phone!),
         const SizedBox(height: 20),
         // Security
         _SectionHeader('Security'),
@@ -171,20 +180,20 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
         // Referral
         _SectionHeader('Referrals'),
         ref.watch(_referralCodeProvider).when(
-          data: (code) => code != null
-              ? _ReferralCodeTile(code: code)
-              : _ActionTile(
-                  icon: Icons.share_outlined,
-                  label: 'Share Referral Code',
-                  onTap: () => _shareReferral(null),
-                ),
-          loading: () => const SizedBox(height: 50),
-          error: (_, __) => _ActionTile(
-            icon: Icons.share_outlined,
-            label: 'Share Referral Code',
-            onTap: () => _shareReferral(null),
-          ),
-        ),
+              data: (code) => code != null
+                  ? _ReferralCodeTile(code: code)
+                  : _ActionTile(
+                      icon: Icons.share_outlined,
+                      label: 'Share Referral Code',
+                      onTap: () => _shareReferral(null),
+                    ),
+              loading: () => const SizedBox(height: 50),
+              error: (_, __) => _ActionTile(
+                icon: Icons.share_outlined,
+                label: 'Share Referral Code',
+                onTap: () => _shareReferral(null),
+              ),
+            ),
         const SizedBox(height: 20),
         // Notifications
         _SectionHeader('Notifications'),
@@ -216,6 +225,19 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
           icon: Icons.card_membership_outlined,
           label: 'My Subscription & Plans',
           onTap: () => context.go('/subscription'),
+        ),
+        const SizedBox(height: 20),
+        // About Us
+        _SectionHeader('About Us'),
+        _ActionTile(
+          icon: Icons.info_outline,
+          label: 'Why K2 Fitness Studio',
+          onTap: () => context.push('/about/why-k2'),
+        ),
+        _ActionTile(
+          icon: Icons.privacy_tip_outlined,
+          label: 'Privacy Policy',
+          onTap: () => context.push('/about/privacy-policy'),
         ),
         const SizedBox(height: 28),
         // Logout
@@ -277,8 +299,8 @@ class _ProfileContentState extends ConsumerState<_ProfileContent> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cardBg,
         title: const Text('Sign Out'),
-        content:
-            Text('Are you sure you want to sign out of ${FlavorConfig.instance.appName}?'),
+        content: Text(
+            'Are you sure you want to sign out of ${FlavorConfig.instance.appName}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -349,8 +371,7 @@ class _InfoTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: TextStyle(
-                        color: AppColors.textMuted, fontSize: 11)),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                 const SizedBox(height: 2),
                 Text(value,
                     style: TextStyle(
@@ -392,9 +413,11 @@ class _ActionTile extends StatelessWidget {
             Expanded(
               child: Text(label,
                   style: TextStyle(
-                      color: AppColors.textPrimary, fontWeight: FontWeight.w500)),
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500)),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 18),
+            const Icon(Icons.chevron_right,
+                color: AppColors.textMuted, size: 18),
           ],
         ),
       ),
@@ -431,7 +454,8 @@ class _ToggleTile extends StatelessWidget {
           Expanded(
               child: Text(label,
                   style: TextStyle(
-                      color: AppColors.textPrimary, fontWeight: FontWeight.w500))),
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500))),
           Switch(
             value: value,
             onChanged: onChanged,
@@ -468,8 +492,7 @@ class _ReferralCodeTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Your Referral Code',
-                    style: TextStyle(
-                        color: AppColors.textMuted, fontSize: 11)),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                 SizedBox(height: 2),
                 Text(code,
                     style: TextStyle(
@@ -588,9 +611,7 @@ class _NotificationSettingsSheetState
           ),
           const SizedBox(height: 20),
           if (_loading)
-            Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.primary))
+            Center(child: CircularProgressIndicator(color: AppColors.primary))
           else ...[
             // Master push toggle
             _NotifToggle(
@@ -667,8 +688,7 @@ class _NotificationSettingsSheetState
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.chat_outlined,
-                      color: Color(0xFF25D366), size: 20),
+                  Icon(Icons.chat_outlined, color: Color(0xFF25D366), size: 20),
                   SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -782,18 +802,63 @@ class _ChangePasswordSheet extends ConsumerStatefulWidget {
       _ChangePasswordSheetState();
 }
 
-class _ChangePasswordSheetState
-    extends ConsumerState<_ChangePasswordSheet> {
+class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
   final _currentCtrl = TextEditingController();
   final _newCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
 
   @override
   void dispose() {
     _currentCtrl.dispose();
     _newCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .changePassword(_currentCtrl.text, _newCtrl.text);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password updated successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(_friendlyError(e)),
+              backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _friendlyError(Object e) {
+    if (e is DioException) {
+      final serverMsg = e.response?.data?['message'] as String?;
+      if (serverMsg != null && serverMsg.isNotEmpty) return serverMsg;
+      final status = e.response?.statusCode;
+      if (status == 400 || status == 401)
+        return 'Current password is incorrect.';
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.unknown) {
+        return 'No internet connection. Please check your network.';
+      }
+    }
+    return 'Could not update password. Please try again.';
   }
 
   @override
@@ -812,22 +877,37 @@ class _ChangePasswordSheetState
             const SizedBox(height: 20),
             TextFormField(
               controller: _currentCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Current Password'),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Required' : null,
+              obscureText: _obscureCurrent,
+              decoration: InputDecoration(
+                labelText: 'Current Password',
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureCurrent
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined),
+                  onPressed: () =>
+                      setState(() => _obscureCurrent = !_obscureCurrent),
+                ),
+              ),
+              validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _newCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'New Password'),
-              validator: (v) =>
-                  (v != null && v.length >= 8) ? null : 'Min 8 characters',
+              obscureText: _obscureNew,
+              decoration: InputDecoration(
+                labelText: 'New Password',
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureNew
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined),
+                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                ),
+              ),
+              validator: Validators.password,
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _loading ? null : () {},
+              onPressed: _loading ? null : _submit,
               child: _loading
                   ? const SizedBox(
                       height: 20,

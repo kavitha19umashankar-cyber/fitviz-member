@@ -29,8 +29,10 @@ class UserModel {
     this.memberProfile,
   });
 
-  int? get membershipId =>
-      (memberProfile?['membershipId'] as num?)?.toInt();
+  int? get membershipId => (memberProfile?['membershipId'] as num?)?.toInt();
+
+  String? get fullProfilePhotoUrl =>
+      profilePhoto != null ? 'https://fitviz.in$profilePhoto' : null;
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>
       _$UserModelFromJson(json);
@@ -88,7 +90,8 @@ class GymModel {
   bool get isChildBranch => parentGymId != null;
 
   String? get logoUrl => branding?['logoUrl'] as String?;
-  String? get fullLogoUrl => logoUrl != null ? 'https://fitviz.in$logoUrl' : null;
+  String? get fullLogoUrl =>
+      logoUrl != null ? 'https://fitviz.in$logoUrl' : null;
   String? get primaryColor => branding?['primaryColor'] as String?;
 
   factory GymModel.fromJson(Map<String, dynamic> json) =>

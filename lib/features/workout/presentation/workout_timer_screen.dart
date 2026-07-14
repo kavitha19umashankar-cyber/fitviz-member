@@ -1,25 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../providers/session_timer_provider.dart';
 
-class WorkoutTimerScreen extends StatefulWidget {
+class WorkoutTimerScreen extends ConsumerStatefulWidget {
   const WorkoutTimerScreen({super.key});
 
   @override
-  State<WorkoutTimerScreen> createState() => _WorkoutTimerScreenState();
+  ConsumerState<WorkoutTimerScreen> createState() => _WorkoutTimerScreenState();
 }
 
-class _WorkoutTimerScreenState extends State<WorkoutTimerScreen>
+class _WorkoutTimerScreenState extends ConsumerState<WorkoutTimerScreen>
     with TickerProviderStateMixin {
   // Clock
   late Timer _clockTimer;
   DateTime _now = DateTime.now();
-
-  // Session timer
-  bool _sessionRunning = false;
-  Duration _sessionElapsed = Duration.zero;
-  Timer? _sessionTimer;
 
   // Rest timer
   static const _restPresets = [30, 45, 60, 90, 120];
@@ -32,7 +29,8 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen>
   @override
   void initState() {
     super.initState();
-    _restAnim = AnimationController(vsync: this, duration: const Duration(seconds: 1));
+    _restAnim =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1));
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
@@ -41,32 +39,9 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen>
   @override
   void dispose() {
     _clockTimer.cancel();
-    _sessionTimer?.cancel();
     _restTimer?.cancel();
     _restAnim.dispose();
     super.dispose();
-  }
-
-  void _toggleSession() {
-    HapticFeedback.mediumImpact();
-    if (_sessionRunning) {
-      _sessionTimer?.cancel();
-      setState(() => _sessionRunning = false);
-    } else {
-      _sessionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() => _sessionElapsed += const Duration(seconds: 1));
-      });
-      setState(() => _sessionRunning = true);
-    }
-  }
-
-  void _resetSession() {
-    HapticFeedback.lightImpact();
-    _sessionTimer?.cancel();
-    setState(() {
-      _sessionRunning = false;
-      _sessionElapsed = Duration.zero;
-    });
   }
 
   void _startRest() {
@@ -130,6 +105,7 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen>
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(sessionTimerProvider);
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       appBar: AppBar(
@@ -151,11 +127,12 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen>
 
               // ── Session Timer ───────────────────────────────────────────────
               _SessionTimerCard(
-                elapsed: _sessionElapsed,
-                running: _sessionRunning,
-                label: _formatDuration(_sessionElapsed),
-                onToggle: _toggleSession,
-                onReset: _resetSession,
+                elapsed: session.elapsed,
+                running: session.running,
+                label: _formatDuration(session.elapsed),
+                onToggle: () =>
+                    ref.read(sessionTimerProvider.notifier).toggle(),
+                onReset: () => ref.read(sessionTimerProvider.notifier).reset(),
               ),
               const SizedBox(height: 20),
 
@@ -200,8 +177,11 @@ class _ClockCard extends StatelessWidget {
         children: [
           Text(
             'Current Time',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 12,
-                letterSpacing: 1.2, fontWeight: FontWeight.w600),
+            style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 12,
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 10),
           Text(
@@ -244,7 +224,9 @@ class _SessionTimerCard extends StatelessWidget {
         color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: running ? AppColors.primary.withOpacity(0.5) : AppColors.cardBorder,
+          color: running
+              ? AppColors.primary.withOpacity(0.5)
+              : AppColors.cardBorder,
         ),
       ),
       child: Column(
@@ -254,26 +236,32 @@ class _SessionTimerCard extends StatelessWidget {
               Icon(Icons.timer_outlined, color: AppColors.primary, size: 18),
               const SizedBox(width: 8),
               Text('Session Timer',
-                  style: TextStyle(color: AppColors.textSecondary,
-                      fontSize: 13, fontWeight: FontWeight.w600)),
+                  style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
               const Spacer(),
               if (elapsed > Duration.zero)
                 GestureDetector(
                   onTap: onReset,
                   child: Text('Reset',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      style:
+                          TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 ),
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            label,
-            style: TextStyle(
-              color: running ? AppColors.primary : AppColors.textPrimary,
-              fontSize: 52,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 3,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: running ? AppColors.primary : AppColors.textPrimary,
+                fontSize: 52,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 3,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -300,7 +288,9 @@ class _SessionTimerCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    running ? 'Pause' : (elapsed > Duration.zero ? 'Resume' : 'Start'),
+                    running
+                        ? 'Pause'
+                        : (elapsed > Duration.zero ? 'Resume' : 'Start'),
                     style: TextStyle(
                       color: running ? AppColors.error : AppColors.darkBg,
                       fontWeight: FontWeight.w700,
@@ -358,11 +348,14 @@ class _RestTimerCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.hourglass_bottom, color: const Color(0xFF4CAF50), size: 18),
+              Icon(Icons.hourglass_bottom,
+                  color: const Color(0xFF4CAF50), size: 18),
               const SizedBox(width: 8),
               Text('Rest Timer',
-                  style: TextStyle(color: AppColors.textSecondary,
-                      fontSize: 13, fontWeight: FontWeight.w600)),
+                  style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 20),
@@ -393,7 +386,9 @@ class _RestTimerCard extends StatelessWidget {
                     Text(
                       '$m:$s',
                       style: TextStyle(
-                        color: running ? AppColors.textPrimary : AppColors.textSecondary,
+                        color: running
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                         fontSize: 38,
                         fontWeight: FontWeight.w700,
                         fontFeatures: const [FontFeature.tabularFigures()],
@@ -401,7 +396,8 @@ class _RestTimerCard extends StatelessWidget {
                     ),
                     Text(
                       running ? 'resting' : 'seconds',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                      style:
+                          TextStyle(color: AppColors.textMuted, fontSize: 11),
                     ),
                   ],
                 ),
@@ -418,7 +414,8 @@ class _RestTimerCard extends StatelessWidget {
                 return GestureDetector(
                   onTap: () => onPresetChanged?.call(p),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary.withOpacity(0.15)
@@ -432,9 +429,12 @@ class _RestTimerCard extends StatelessWidget {
                     child: Text(
                       p >= 60 ? '${p ~/ 60}m' : '${p}s',
                       style: TextStyle(
-                        color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w400,
                       ),
                     ),
                   ),

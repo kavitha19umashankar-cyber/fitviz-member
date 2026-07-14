@@ -12,6 +12,8 @@ class FlavorConfig {
   final String? brandParentGymId;
   final Color primaryColor;
   final String logoAssetPath;
+  // null = no support contact shown on the login screen.
+  final String? contactPhone;
 
   const FlavorConfig({
     required this.flavor,
@@ -20,6 +22,7 @@ class FlavorConfig {
     this.brandParentGymId,
     required this.primaryColor,
     required this.logoAssetPath,
+    this.contactPhone,
   });
 
   static late FlavorConfig instance;

@@ -107,16 +107,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen>
           // ── Tab 1: Check-in panel ────────────────────────────────────────
           attendanceAsync.when(
             data: (result) {
-              final todayRecord = result.records.firstWhere(
-                (r) => r.isToday,
-                orElse: () => result.records.isEmpty
-                    ? const AttendanceRecord(
-                        id: '', date: '', checkIn: null, checkOut: null)
-                    : result.records.first,
-              );
-              final hasToday = result.records.any((r) => r.isToday);
+              final todayDays = result.days.where((d) => d.isToday);
+              final todayDay = todayDays.isEmpty ? null : todayDays.first;
               return _CheckInTab(
-                todayRecord: hasToday ? todayRecord : null,
+                todayDay: todayDay,
                 onCheckOut: _checkOut,
                 loading: _actionLoading,
               );
@@ -134,12 +128,12 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen>
 }
 
 class _CheckInTab extends ConsumerWidget {
-  final AttendanceRecord? todayRecord;
+  final AttendanceDay? todayDay;
   final VoidCallback onCheckOut;
   final bool loading;
 
   const _CheckInTab({
-    required this.todayRecord,
+    required this.todayDay,
     required this.onCheckOut,
     required this.loading,
   });
@@ -151,6 +145,13 @@ class _CheckInTab extends ConsumerWidget {
     final qrData = userId != null && gymId != null
         ? 'fitviz:checkin:$gymId:$userId'
         : null;
+
+    // Status is driven by the most recent session today — an open session
+    // (no checkOut yet) means the member is currently checked in.
+    final sessions = todayDay?.sessions ?? const [];
+    final lastSession = sessions.isEmpty ? null : sessions.last;
+    final isCheckedIn = lastSession != null && lastSession.checkOutTime == null;
+    final visitCount = sessions.length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -172,16 +173,17 @@ class _CheckInTab extends ConsumerWidget {
                 Text("Today's Status",
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
-                if (todayRecord == null)
+                if (lastSession == null)
                   _StatusChip(label: 'Not Checked In', color: AppColors.textMuted)
-                else if (todayRecord!.isCheckedIn)
+                else if (isCheckedIn)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _StatusChip(label: 'Checked In', color: AppColors.success),
                       const SizedBox(height: 8),
                       Text(
-                        'Since ${FitDateUtils.formatTime(todayRecord!.checkInTime!)}',
+                        'Since ${FitDateUtils.formatTime(lastSession.checkInTime!)}'
+                        '${visitCount > 1 ? ' · Visit #$visitCount today' : ''}',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -193,7 +195,9 @@ class _CheckInTab extends ConsumerWidget {
                       _StatusChip(label: 'Completed', color: AppColors.primary),
                       const SizedBox(height: 8),
                       Text(
-                        '${FitDateUtils.formatTime(todayRecord!.checkInTime!)} — ${FitDateUtils.formatTime(todayRecord!.checkOutTime!)}',
+                        visitCount > 1
+                            ? '$visitCount visits today · ${_durationLabel(todayDay!.totalDuration)} total'
+                            : '${FitDateUtils.formatTime(lastSession.checkInTime!)} — ${FitDateUtils.formatTime(lastSession.checkOutTime!)}',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -203,7 +207,7 @@ class _CheckInTab extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           // Action button — check-out only (check-in is via QR code or staff)
-          if (todayRecord != null && todayRecord!.isCheckedIn) ...[
+          if (isCheckedIn) ...[
             OutlinedButton.icon(
               onPressed: loading ? null : onCheckOut,
               icon: loading
@@ -314,7 +318,7 @@ class _HistoryTabWrapper extends ConsumerWidget {
                   (selected.month, selected.year)))
               .when(
                 data: (result) => _HistoryTab(
-                    records: result.records, stats: result.stats),
+                    days: result.days, stats: result.stats),
                 loading: () => Center(
                     child: CircularProgressIndicator(
                         color: AppColors.primary)),
@@ -329,18 +333,18 @@ class _HistoryTabWrapper extends ConsumerWidget {
   }
 }
 
+String _durationLabel(Duration d) {
+  if (d.inHours >= 1) {
+    return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
+  }
+  return '${d.inMinutes}m';
+}
+
 class _HistoryTab extends StatelessWidget {
-  final List<AttendanceRecord> records;
+  final List<AttendanceDay> days;
   final AttendanceStats? stats;
 
-  const _HistoryTab({required this.records, this.stats});
-
-  String _durationLabel(Duration d) {
-    if (d.inHours >= 1) {
-      return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
-    }
-    return '${d.inMinutes}m';
-  }
+  const _HistoryTab({required this.days, this.stats});
 
   @override
   Widget build(BuildContext context) {
@@ -381,8 +385,8 @@ class _HistoryTab extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
-        // ── Records list ────────────────────────────────────────────────
-        if (records.isEmpty)
+        // ── Records list — one card per day, with every session inside ───
+        if (days.isEmpty)
           const Center(
             child: Padding(
               padding: EdgeInsets.only(top: 40),
@@ -391,11 +395,11 @@ class _HistoryTab extends StatelessWidget {
             ),
           )
         else
-          ...records.map((r) {
-            final date = r.localDate;
+          ...days.map((day) {
+            final date = day.localDate;
             final dayName = DateFormat('EEE').format(date);
             final fullDate = DateFormat('d MMM yyyy').format(date);
-            final dur = r.duration;
+            final totalDur = day.totalDuration;
 
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
@@ -406,21 +410,22 @@ class _HistoryTab extends StatelessWidget {
                 border: Border.all(color: AppColors.cardBorder),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: r.isComplete
+                      color: day.isComplete
                           ? AppColors.primary.withOpacity(0.12)
                           : AppColors.surface,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
-                      r.isComplete
+                      day.isComplete
                           ? Icons.check_circle_outline
                           : Icons.radio_button_unchecked,
-                      color: r.isComplete
+                      color: day.isComplete
                           ? AppColors.primary
                           : AppColors.textMuted,
                     ),
@@ -450,18 +455,23 @@ class _HistoryTab extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 3),
-                        if (r.checkInTime != null)
-                          Text(
-                            r.checkOutTime != null
-                                ? '${FitDateUtils.formatTime(r.checkInTime!)}  →  ${FitDateUtils.formatTime(r.checkOutTime!)}'
-                                : 'Checked in at ${FitDateUtils.formatTime(r.checkInTime!)}',
-                            style: TextStyle(
-                                color: AppColors.textSecondary, fontSize: 12),
-                          ),
+                        ...day.sessions.map((s) => Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                s.checkInTime == null
+                                    ? '—'
+                                    : s.checkOutTime != null
+                                        ? '${FitDateUtils.formatTime(s.checkInTime!)}  →  ${FitDateUtils.formatTime(s.checkOutTime!)}'
+                                        : 'Checked in at ${FitDateUtils.formatTime(s.checkInTime!)}',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12),
+                              ),
+                            )),
                       ],
                     ),
                   ),
-                  if (dur != null)
+                  if (totalDur.inMinutes > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
@@ -470,7 +480,7 @@ class _HistoryTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        _durationLabel(dur),
+                        _durationLabel(totalDur),
                         style: TextStyle(
                             color: AppColors.primary,
                             fontSize: 12,

@@ -285,7 +285,7 @@ workflows:
             --flavor k2fitness \
             --target lib/flavors/main_k2fitness.dart \
             --release \
-            --build-number=23 \
+            --build-number=24 \
             --export-options-plist=/tmp/ExportOptions-k2fitness.plist
 
     artifacts:

@@ -9,7 +9,13 @@ import '../../events/app_events.dart';
 /// On refresh failure → fires forceLogoutEvents (AuthNotifier reacts) and clears storage.
 class AuthInterceptor extends Interceptor {
   final Dio _dio;
-  bool _isRefreshing = false;
+
+  // Shared by all concurrent 401s so only one refresh call is ever in
+  // flight — the backend rotates the refresh token on every use, so two
+  // simultaneous refresh attempts would race and the loser's now-stale
+  // token would be rejected, force-logging-out a session that was still
+  // valid.
+  Future<String>? _refreshFuture;
 
   AuthInterceptor(this._dio);
 
@@ -40,41 +46,9 @@ class AuthInterceptor extends Interceptor {
     final isRefreshEndpoint =
         err.requestOptions.path.contains(ApiConstants.refresh);
 
-    if (is401 && !isRefreshEndpoint && !_isRefreshing) {
-      _isRefreshing = true;
+    if (is401 && !isRefreshEndpoint) {
       try {
-        final refreshToken = await SecureStorage.getRefreshToken();
-
-        // No refresh token stored → immediate force logout, resolve with empty to stop error propagation
-        if (refreshToken == null || refreshToken.isEmpty) {
-          await _forceLogout();
-          return handler.reject(err); // reject so router redirect takes over
-        }
-
-        final response = await _dio.post(
-          ApiConstants.refresh,
-          data: {'refreshToken': refreshToken},
-        );
-
-        final newAccessToken = response.data['accessToken'] as String;
-
-        // Backend rotates the refresh token — save the new one from Set-Cookie
-        String newRefreshToken = refreshToken;
-        final cookies = response.headers.map['set-cookie'];
-        if (cookies != null) {
-          for (final cookie in cookies) {
-            if (cookie.startsWith('refreshToken=')) {
-              newRefreshToken =
-                  cookie.split('refreshToken=')[1].split(';')[0];
-              break;
-            }
-          }
-        }
-
-        await SecureStorage.saveTokens(
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-        );
+        final newAccessToken = await _refreshAccessToken();
 
         // Retry the original request with the fresh token
         final retryOptions = err.requestOptions;
@@ -85,14 +59,54 @@ class AuthInterceptor extends Interceptor {
       } catch (e) {
         debugPrint('[AUTH] Token refresh failed: $e — forcing logout');
         await _forceLogout();
-        _isRefreshing = false;
         return handler.reject(err); // auth failed — router redirect will take over
-      } finally {
-        _isRefreshing = false;
       }
     }
 
     return handler.next(err);
+  }
+
+  // Ensures only one /auth/refresh call is ever in flight at a time.
+  // Concurrent 401s all await the same Future and share its result instead
+  // of each racing their own refresh call against the backend's rotation.
+  Future<String> _refreshAccessToken() {
+    return _refreshFuture ??=
+        _doRefresh().whenComplete(() => _refreshFuture = null);
+  }
+
+  Future<String> _doRefresh() async {
+    final refreshToken = await SecureStorage.getRefreshToken();
+
+    // No refresh token stored → nothing to refresh with.
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw StateError('No refresh token stored');
+    }
+
+    final response = await _dio.post(
+      ApiConstants.refresh,
+      data: {'refreshToken': refreshToken},
+    );
+
+    final newAccessToken = response.data['accessToken'] as String;
+
+    // Backend rotates the refresh token — save the new one from Set-Cookie
+    String newRefreshToken = refreshToken;
+    final cookies = response.headers.map['set-cookie'];
+    if (cookies != null) {
+      for (final cookie in cookies) {
+        if (cookie.startsWith('refreshToken=')) {
+          newRefreshToken = cookie.split('refreshToken=')[1].split(';')[0];
+          break;
+        }
+      }
+    }
+
+    await SecureStorage.saveTokens(
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    );
+
+    return newAccessToken;
   }
 
   Future<void> _forceLogout() async {

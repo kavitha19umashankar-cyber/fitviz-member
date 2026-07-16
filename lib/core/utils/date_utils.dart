@@ -48,7 +48,13 @@ class FitDateUtils {
   /// Consecutive attendance streak from a list of dates (most recent first).
   static int attendanceStreak(List<DateTime> dates) {
     if (dates.isEmpty) return 0;
-    final sorted = dates.map((d) => DateTime(d.year, d.month, d.day)).toList()
+    // De-duplicate to unique calendar days first — multiple check-ins on
+    // the same day would otherwise sit next to each other in the sorted
+    // list with a 0-day gap, which the loop below reads as a broken streak.
+    final sorted = dates
+        .map((d) => DateTime(d.year, d.month, d.day))
+        .toSet()
+        .toList()
       ..sort((a, b) => b.compareTo(a));
     int streak = 1;
     for (int i = 1; i < sorted.length; i++) {

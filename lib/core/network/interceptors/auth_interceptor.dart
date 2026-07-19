@@ -43,10 +43,15 @@ class AuthInterceptor extends Interceptor {
     ErrorInterceptorHandler handler,
   ) async {
     final is401 = err.response?.statusCode == 401;
-    final isRefreshEndpoint =
-        err.requestOptions.path.contains(ApiConstants.refresh);
+    // A 401 on these means "wrong credentials", not "expired token" — silently
+    // refreshing and retrying would replay the same bad credentials forever
+    // whenever a stale-but-still-valid refresh token happens to be in storage.
+    final path = err.requestOptions.path;
+    final isAuthEndpoint = path.contains(ApiConstants.refresh) ||
+        path.contains(ApiConstants.login) ||
+        path.contains(ApiConstants.register);
 
-    if (is401 && !isRefreshEndpoint) {
+    if (is401 && !isAuthEndpoint) {
       try {
         final newAccessToken = await _refreshAccessToken();
 

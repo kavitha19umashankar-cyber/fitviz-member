@@ -107,6 +107,8 @@ class WorkoutRepository {
     final list = (res.data as List<dynamic>?) ?? [];
     // History returns flat objects: { planDate, workoutTitle, workoutDetail,
     // dietType, meals, status, isRestDay } — no id, no nested entry objects.
+    list.sort((a, b) => (b['planDate'] as String? ?? '')
+        .compareTo(a['planDate'] as String? ?? ''));
     return list.map((e) {
       final m = e as Map<String, dynamic>;
       final hasWorkout =

@@ -18,6 +18,15 @@ import '../../features/achievements/presentation/achievements_screen.dart';
 import '../../features/about/presentation/why_k2_screen.dart';
 import '../../features/about/presentation/privacy_policy_screen.dart';
 import '../../shared/widgets/main_shell.dart';
+import '../../flavors/flavor_config.dart';
+import '../../shared/fitviz_v2/main_shell_v2.dart';
+import '../../features/auth/presentation/login_screen_v2.dart';
+import '../../features/auth/presentation/forgot_password_screen_v2.dart';
+import '../../features/profile/presentation/profile_screen_v2.dart';
+import '../../features/dashboard/presentation/dashboard_screen_v2.dart';
+import '../../features/workout/presentation/workout_screen_v2.dart';
+import '../../features/attendance/presentation/attendance_screen_v2.dart';
+import '../../features/classes/presentation/classes_screen_v2.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.watch(authProvider.notifier);
@@ -43,11 +52,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Auth (no shell) ───────────────────────────────────────────────────
       GoRoute(
         path: '/auth/login',
-        builder: (_, __) => const LoginScreen(),
+        builder: (_, __) => FlavorConfig.instance.flavor == Flavor.fitviz
+            ? const LoginScreenV2()
+            : const LoginScreen(),
       ),
       GoRoute(
         path: '/auth/forgot-password',
-        builder: (_, __) => const ForgotPasswordScreen(),
+        builder: (_, __) => FlavorConfig.instance.flavor == Flavor.fitviz
+            ? const ForgotPasswordScreenV2()
+            : const ForgotPasswordScreen(),
       ),
       GoRoute(
         path: '/feedback',
@@ -71,23 +84,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       // ── Main app (bottom nav shell) ───────────────────────────────────────
       ShellRoute(
-        builder: (context, state, child) => MainShell(child: child),
+        builder: (context, state, child) =>
+            FlavorConfig.instance.flavor == Flavor.fitviz
+                ? MainShellV2(child: child)
+                : MainShell(child: child),
         routes: [
           GoRoute(
             path: '/dashboard',
-            builder: (_, __) => const DashboardScreen(),
+            builder: (_, __) => FlavorConfig.instance.flavor == Flavor.fitviz
+                ? const DashboardScreenV2()
+                : const DashboardScreen(),
           ),
           GoRoute(
             path: '/workout',
-            builder: (_, __) => const WorkoutScreen(),
+            builder: (_, __) => FlavorConfig.instance.flavor == Flavor.fitviz
+                ? const WorkoutScreenV2()
+                : const WorkoutScreen(),
           ),
           GoRoute(
             path: '/attendance',
-            builder: (_, __) => const AttendanceScreen(),
+            builder: (_, __) => FlavorConfig.instance.flavor == Flavor.fitviz
+                ? const AttendanceScreenV2()
+                : const AttendanceScreen(),
           ),
           GoRoute(
             path: '/classes',
-            builder: (_, __) => const ClassesScreen(),
+            builder: (_, __) => FlavorConfig.instance.flavor == Flavor.fitviz
+                ? const ClassesScreenV2()
+                : const ClassesScreen(),
           ),
           GoRoute(
             path: '/subscription',
@@ -99,7 +123,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/profile',
-            builder: (_, __) => const ProfileScreen(),
+            builder: (_, __) => FlavorConfig.instance.flavor == Flavor.fitviz
+                ? const ProfileScreenV2()
+                : const ProfileScreen(),
           ),
         ],
       ),

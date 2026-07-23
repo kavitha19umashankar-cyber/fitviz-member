@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 import '../../features/inbox/inbox_service.dart';
 
 class NotificationService {
@@ -23,6 +25,12 @@ class NotificationService {
 
   /// Call once from main() after Firebase.initializeApp().
   static Future<void> initialize() async {
+    // The rest timer only ever schedules a short relative delay ("N seconds
+    // from now"), never an absolute wall-clock time-of-day, so using UTC as
+    // the local location is safe and avoids needing a device-timezone lookup.
+    tz_data.initializeTimeZones();
+    tz.setLocalLocation(tz.UTC);
+
     const androidSettings =
         AndroidInitializationSettings('@drawable/ic_notification');
     // Permissions are already requested via FirebaseMessaging.requestPermission()
@@ -113,6 +121,42 @@ class NotificationService {
       ]);
     } catch (_) {}
   }
+
+  static const _restTimerNotificationId = 9001;
+
+  /// Schedules a local notification to fire after [remaining], so the rest
+  /// timer completion is surfaced even if the user has navigated away from
+  /// the timer screen or backgrounded the app entirely. Uses inexact
+  /// scheduling — no SCHEDULE_EXACT_ALARM permission required — which is
+  /// accurate to within a few seconds while the app was recently active,
+  /// which is always true for an in-progress workout.
+  static Future<void> scheduleRestTimerDone(Duration remaining) async {
+    await _local.zonedSchedule(
+      _restTimerNotificationId,
+      'Rest complete',
+      'Rest over — back to it!',
+      tz.TZDateTime.now(tz.UTC).add(remaining),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@drawable/ic_notification',
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  /// Cancels a pending rest-timer notification — call when the timer is
+  /// cancelled early, or replaced by a new one, so a stale notification
+  /// never fires later.
+  static Future<void> cancelRestTimerNotification() =>
+      _local.cancel(_restTimerNotificationId);
 
   static Future<void> _show(RemoteMessage message) async {
     final n = message.notification;

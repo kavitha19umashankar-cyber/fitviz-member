@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/session_timer_provider.dart';
+import '../providers/rest_timer_provider.dart';
 import '../../../shared/fitviz_v2/theme/fitviz_v2_colors.dart';
 import '../../../shared/fitviz_v2/theme/fitviz_v2_typography.dart';
 import '../../../shared/fitviz_v2/theme/fitviz_v2_metrics.dart';
@@ -25,12 +25,6 @@ class _WorkoutTimerScreenV2State extends ConsumerState<WorkoutTimerScreenV2> {
   late Timer _clockTimer;
   DateTime _now = DateTime.now();
 
-  static const _restPresets = [30, 45, 60, 90, 120];
-  int _restSeconds = 60;
-  int _restRemaining = 0;
-  bool _restRunning = false;
-  Timer? _restTimer;
-
   @override
   void initState() {
     super.initState();
@@ -42,42 +36,17 @@ class _WorkoutTimerScreenV2State extends ConsumerState<WorkoutTimerScreenV2> {
   @override
   void dispose() {
     _clockTimer.cancel();
-    _restTimer?.cancel();
     super.dispose();
   }
 
-  void _startRest() {
-    HapticFeedback.mediumImpact();
-    _restTimer?.cancel();
-    setState(() {
-      _restRemaining = _restSeconds;
-      _restRunning = true;
-    });
-    _restTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) return;
-      setState(() => _restRemaining--);
-      if (_restRemaining <= 0) {
-        t.cancel();
-        setState(() => _restRunning = false);
-        HapticFeedback.heavyImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rest over — back to it!'),
-            backgroundColor: FitVizV2Colors.accent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    });
-  }
-
-  void _cancelRest() {
-    HapticFeedback.lightImpact();
-    _restTimer?.cancel();
-    setState(() {
-      _restRunning = false;
-      _restRemaining = 0;
-    });
+  void _showRestDoneSnack() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Rest over — back to it!'),
+        backgroundColor: FitVizV2Colors.accent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   String _formatDuration(Duration d) {
@@ -100,6 +69,10 @@ class _WorkoutTimerScreenV2State extends ConsumerState<WorkoutTimerScreenV2> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionTimerProvider);
+    final rest = ref.watch(restTimerProvider);
+    ref.listen(restTimerProvider, (previous, next) {
+      if (previous?.running == true && !next.running) _showRestDoneSnack();
+    });
     final sessionMinutes = session.elapsed.inSeconds == 0 ? 0 : (session.elapsed.inSeconds % 3600) / 36;
 
     return Scaffold(
@@ -179,7 +152,7 @@ class _WorkoutTimerScreenV2State extends ConsumerState<WorkoutTimerScreenV2> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: FitVizV2Colors.surface,
-                          border: Border.all(color: _restRunning ? FitVizV2Colors.success : FitVizV2Colors.border),
+                          border: Border.all(color: rest.running ? FitVizV2Colors.success : FitVizV2Colors.border),
                           borderRadius: BorderRadius.circular(FitVizV2Radius.md),
                         ),
                         child: Column(
@@ -193,18 +166,18 @@ class _WorkoutTimerScreenV2State extends ConsumerState<WorkoutTimerScreenV2> {
                             ),
                             const SizedBox(height: 14),
                             Text(
-                              _formatDuration(Duration(seconds: _restRunning ? _restRemaining : _restSeconds)),
-                              style: FitVizV2Text.data(size: 34, color: _restRunning ? FitVizV2Colors.ink : FitVizV2Colors.inkDim),
+                              _formatDuration(rest.running ? rest.remaining : Duration(seconds: rest.selectedSeconds)),
+                              style: FitVizV2Text.data(size: 34, color: rest.running ? FitVizV2Colors.ink : FitVizV2Colors.inkDim),
                             ),
                             const SizedBox(height: 14),
-                            if (!_restRunning)
+                            if (!rest.running)
                               Wrap(
                                 spacing: 8,
                                 alignment: WrapAlignment.center,
-                                children: _restPresets.map((p) {
-                                  final selected = p == _restSeconds;
+                                children: rest.presets.map((p) {
+                                  final selected = p == rest.selectedSeconds;
                                   return GestureDetector(
-                                    onTap: () => setState(() => _restSeconds = p),
+                                    onTap: () => ref.read(restTimerProvider.notifier).selectPreset(p),
                                     child: V2Chip(
                                       label: p >= 60 ? '${p ~/ 60}m' : '${p}s',
                                       variant: selected ? V2ChipVariant.accent : V2ChipVariant.neutral,
@@ -214,18 +187,20 @@ class _WorkoutTimerScreenV2State extends ConsumerState<WorkoutTimerScreenV2> {
                               ),
                             const SizedBox(height: 14),
                             GestureDetector(
-                              onTap: _restRunning ? _cancelRest : _startRest,
+                              onTap: rest.running
+                                  ? () => ref.read(restTimerProvider.notifier).cancel()
+                                  : () => ref.read(restTimerProvider.notifier).start(),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: _restRunning ? FitVizV2Colors.surface2 : FitVizV2Colors.success,
+                                  color: rest.running ? FitVizV2Colors.surface2 : FitVizV2Colors.success,
                                   borderRadius: BorderRadius.circular(FitVizV2Radius.pill),
-                                  border: _restRunning ? Border.all(color: FitVizV2Colors.danger) : null,
+                                  border: rest.running ? Border.all(color: FitVizV2Colors.danger) : null,
                                 ),
                                 child: Text(
-                                  _restRunning ? 'Cancel Rest' : 'Start Rest',
+                                  rest.running ? 'Cancel Rest' : 'Start Rest',
                                   style: TextStyle(
-                                    color: _restRunning ? FitVizV2Colors.danger : FitVizV2Colors.accentInk,
+                                    color: rest.running ? FitVizV2Colors.danger : FitVizV2Colors.accentInk,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 14,
                                   ),

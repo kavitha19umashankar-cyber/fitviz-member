@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../providers/session_timer_provider.dart';
+import '../providers/rest_timer_provider.dart';
 
 class WorkoutTimerScreen extends ConsumerStatefulWidget {
   const WorkoutTimerScreen({super.key});
@@ -12,25 +12,14 @@ class WorkoutTimerScreen extends ConsumerStatefulWidget {
   ConsumerState<WorkoutTimerScreen> createState() => _WorkoutTimerScreenState();
 }
 
-class _WorkoutTimerScreenState extends ConsumerState<WorkoutTimerScreen>
-    with TickerProviderStateMixin {
+class _WorkoutTimerScreenState extends ConsumerState<WorkoutTimerScreen> {
   // Clock
   late Timer _clockTimer;
   DateTime _now = DateTime.now();
 
-  // Rest timer
-  static const _restPresets = [30, 45, 60, 90, 120];
-  int _restSeconds = 60;
-  int _restRemaining = 0;
-  bool _restRunning = false;
-  Timer? _restTimer;
-  late AnimationController _restAnim;
-
   @override
   void initState() {
     super.initState();
-    _restAnim =
-        AnimationController(vsync: this, duration: const Duration(seconds: 1));
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
@@ -39,39 +28,7 @@ class _WorkoutTimerScreenState extends ConsumerState<WorkoutTimerScreen>
   @override
   void dispose() {
     _clockTimer.cancel();
-    _restTimer?.cancel();
-    _restAnim.dispose();
     super.dispose();
-  }
-
-  void _startRest() {
-    HapticFeedback.mediumImpact();
-    _restTimer?.cancel();
-    setState(() {
-      _restRemaining = _restSeconds;
-      _restRunning = true;
-    });
-    _restAnim.forward(from: 0);
-    _restTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) return;
-      setState(() => _restRemaining--);
-      if (_restRemaining <= 0) {
-        t.cancel();
-        setState(() => _restRunning = false);
-        HapticFeedback.heavyImpact();
-        _showRestDoneSnack();
-      }
-    });
-  }
-
-  void _cancelRest() {
-    HapticFeedback.lightImpact();
-    _restTimer?.cancel();
-    _restAnim.reset();
-    setState(() {
-      _restRunning = false;
-      _restRemaining = 0;
-    });
   }
 
   void _showRestDoneSnack() {
@@ -106,6 +63,10 @@ class _WorkoutTimerScreenState extends ConsumerState<WorkoutTimerScreen>
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionTimerProvider);
+    final rest = ref.watch(restTimerProvider);
+    ref.listen(restTimerProvider, (previous, next) {
+      if (previous?.running == true && !next.running) _showRestDoneSnack();
+    });
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       appBar: AppBar(
@@ -138,17 +99,19 @@ class _WorkoutTimerScreenState extends ConsumerState<WorkoutTimerScreen>
 
               // ── Rest Timer ──────────────────────────────────────────────────
               _RestTimerCard(
-                presets: _restPresets,
-                selectedSeconds: _restSeconds,
-                remaining: _restRemaining,
-                running: _restRunning,
-                progress: _restRunning && _restSeconds > 0
-                    ? _restRemaining / _restSeconds
+                presets: rest.presets,
+                selectedSeconds: rest.selectedSeconds,
+                remaining: rest.remaining.inSeconds,
+                running: rest.running,
+                progress: rest.running && rest.selectedSeconds > 0
+                    ? rest.remaining.inSeconds / rest.selectedSeconds
                     : 1.0,
-                onPresetChanged: _restRunning
+                onPresetChanged: rest.running
                     ? null
-                    : (v) => setState(() => _restSeconds = v),
-                onStart: _restRunning ? _cancelRest : _startRest,
+                    : (v) => ref.read(restTimerProvider.notifier).selectPreset(v),
+                onStart: rest.running
+                    ? () => ref.read(restTimerProvider.notifier).cancel()
+                    : () => ref.read(restTimerProvider.notifier).start(),
               ),
               const SizedBox(height: 32),
             ],

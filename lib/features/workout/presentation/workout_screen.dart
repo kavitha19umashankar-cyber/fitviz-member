@@ -6,6 +6,7 @@ import '../../../core/utils/date_utils.dart';
 import '../../../core/providers/session_provider.dart';
 import '../data/workout_repository.dart';
 import '../../attendance/data/attendance_repository.dart';
+import '../../../shared/widgets/formatted_plan_text.dart';
 import 'workout_timer_screen.dart';
 
 final _todayPlanProvider = FutureProvider<DailyPlan?>((ref) {
@@ -165,9 +166,9 @@ class _TodayPlanView extends ConsumerWidget {
                 children: plan.workoutEntry!.exercises
                     .map((exercise) => Padding(
                           padding: const EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            exercise,
-                            style: TextStyle(
+                          child: FormattedPlanLine(
+                            raw: exercise,
+                            baseStyle: TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 14,
                                 height: 1.4),
